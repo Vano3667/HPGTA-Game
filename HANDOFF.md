@@ -8,7 +8,7 @@
 
 **Last updated:** 2026-11-21
 
-**GitHub:** https://github.com/Vano3667/HPGTA-Game — private repository, branch `main`. English README, concept and autonomous implementation prompt have been published. The five SVG references are already labeled in English. This handoff update is the final documentation commit in progress.
+**GitHub:** https://github.com/Vano3667/HPGTA-Game — private repository, branch `main`. English README, concept, autonomous implementation prompt, HANDOFF and five English-labeled SVG references are published and verified.
 
 **Immediate next action:** inspect the repository and local toolchain, select the implementation route, and build the complete playable five-district game autonomously.
 
@@ -55,8 +55,8 @@ SVGs are self-contained authored concept maps, not final sprites or production-r
 ## Current English Revision
 
 - **Requested change:** all prompts and project information in English; redesign the game around a Vampire Survivors-like auto-attacking survival roguelite; one-handed bottom-screen movement; the development agent works autonomously without asking the user for decisions or clarifications.
-- **Files revised:** `README.md`, `CONCEPT.md`, `PROMPT_FOR_AGENT.md`, `HANDOFF.md`. SVG artwork already contains English labels; no graphic relabeling was needed.
-- **Publication state:** revised README, concept and autonomous implementation prompt were pushed to GitHub `main` in commit `8eabf3fdfe16ba4169cb8befc61f435e01790f79`. The Handoff translation is being published now; verify the final remote root, `refs/` and commit before finishing.
+- **Files updated:** `README.md`, `CONCEPT.md`, `PROMPT_FOR_AGENT.md`, `HANDOFF.md`. SVG artwork already contains English labels; no graphic relabeling was needed.
+- **Publication state:** all four English Markdown files are published on private GitHub `main`. The remote root and `refs/` were verified to contain all four Markdown files and five SVG references.
 
 ## Implementation Principles
 
@@ -69,9 +69,11 @@ SVGs are self-contained authored concept maps, not final sprites or production-r
 
 ## Checks and Known Limitations
 
-- All five SVG files were revalidated as well-formed XML during this revision.
-- A local `git clone` attempt via GitHub CLI failed because Git's HTTPS credential acquisition was unavailable. Do not echo or store auth secrets. Use the configured GitHub integration or another safe route for publication.
-- The documents/visual references do not constitute a game implementation. Engine import/render, Android build and gameplay have not been tested.
+- All five SVGs were revalidated as well-formed XML during this revision.
+- A text scan found no Cyrillic characters in the Markdown project documents.
+- GitHub API verification confirmed the remote root contains `README.md`, `CONCEPT.md`, `PROMPT_FOR_AGENT.md` and `HANDOFF.md`; `refs/` contains the five expected SVGs.
+- A local GitHub CLI clone attempt failed because Git's HTTPS credential acquisition was unavailable. The configured GitHub API integration successfully published the files.
+- The documents and visual references do not constitute a game implementation. Engine import/render, Android build and gameplay have not been tested.
 
 ## Session Log
 
@@ -79,4 +81,4 @@ SVGs are self-contained authored concept maps, not final sprites or production-r
 
 - **Request:** translate all project information/prompts to English; pivot to automatic-attacking survival roguelite; use one-hand, one-thumb bottom-zone movement; require autonomous work without asking user decisions.
 - **Design decisions:** treat the survival genre as a high-level reference, keep all world/art/UI original; retain five districts, adapt them to escalating timed survival, experience pickups, level-up choices and automatic spell synergies; remove mandatory dual-stick, manual aim/fire and required active buttons.
-- **Next:** verify the English documents and five references on the private GitHub repository. Then proceed to the autonomous game implementation.
+- **Next:** inspect the existing repository/toolchain and begin implementing the complete playable campaign autonomously. Do not ask the user for design or engine choices; record decisions and actual test results here.

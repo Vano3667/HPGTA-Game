@@ -1,84 +1,68 @@
-# HANDOFF — Hex District: Curfew
+# HANDOFF — Harry Potter: Hex District
 
-> **Mandatory for every future agent:** read this file at the start of each session and update it before ending. Keep the actual project status, changed files, test/build results, decisions, known issues, blockers and next concrete task here. This file is the persistent handoff; do not rely on chat history.
+> Mandatory for every future coding agent: read this file first and update it before ending every session. Record changed files, actual test/build results, autonomous decisions, constraints and the next concrete step. Do not rely on chat history.
 
-## Project Status
+## Status
 
-**Stage:** design package and five SVG level references are complete. Game code, engine project and APK have not yet been created.
+**Current stage:** English fan-game concept, five custom scene boards, overhead character/enemy sheets and eight preserved style-reference screenshots are prepared. No playable game/engine project or APK exists yet.
 
-**Last updated:** 2026-11-21
+**Repository:** https://github.com/Vano3667/HPGTA-Game — private GitHub repository, `main` branch. The English concept, README and autonomous build prompt have been updated. New scene and sprite SVG boards, eight original user-supplied reference screenshots, and archived older diagrams are uploaded. This handoff update is being published as the final documentation step for this revision.
 
-**GitHub:** https://github.com/Vano3667/HPGTA-Game — private repository, branch `main`. English README, concept, autonomous implementation prompt, HANDOFF and five English-labeled SVG references are published and verified.
+**Next development step:** autonomously inspect the repository/toolchain and begin implementing the complete five-chapter Android survival game. Do not ask the user to choose an engine, make art decisions or resolve ambiguities; infer practical defaults, record them, continue.
 
-**Immediate next action:** inspect the repository and local toolchain, select the implementation route, and build the complete playable five-district game autonomously.
+## Approved Brief
 
-## Approved Product Direction
+- Working title: **Harry Potter: Hex District**.
+- Android, portrait-first, top-down survival roguelite.
+- Inspiration: one-thumb movement/automatic survival attacks as in the Vampire Survivors genre; dense top-down shooter/survival crowd patterns from Crimsonland; compact gritty city-map composition from the user's GTA2 references.
+- **Controls:** one hand, one thumb. Bottom screen safe-area movement zone; free character movement across the entire arena; wand and spells automatically attack; no required manual aim/shoot, second thumb or twin-stick input.
+- Use recognizable Harry Potter fan-game canon/locations as the user requested. Keep mechanics, compositions, sprites, HUD and scene layouts original and verify use rights before any commercial release.
+- Five chapters: Diagon Alley, Hogwarts Courtyard, Forbidden Forest, Quidditch Pitch, Ministry of Magic / Department of Mysteries.
+- Coding agents are required to work end-to-end autonomously without requesting choices or approvals, and to keep this file updated after each session.
 
-- Working title: **Hex District: Curfew**.
-- Platform/genre: Android portrait-first, top-down survival roguelite with automatic attacks and escalating enemy pressure. Use the accessible movement-focused auto-attacking survival genre as a high-level reference; do not copy another game's expressive assets or exact presentation.
-- **Core input:** comfortable one-hand/one-thumb play. Place movement input in the bottom screen safe area; movement is free across the arena. All basic attacks, spells, target selection and pickups are automatic. No mandatory aim/fire/cast control or second hand.
-- Player decisions: movement, positioning, upgrade selection, build synergies and route choice.
-- Original world: city of Vesper, Gloam Academy, apprentice courier Mira Vale and the Starfall Orrery. No imported franchise characters, places, names, logos or crests.
-- The complete first campaign has five authored districts, each with a unique hazard and boss. See `CONCEPT.md`.
-- **Autonomy requirement:** coding agents must not ask the user clarification, approval, engine, art or design questions. Infer practical defaults from the approved brief, document consequential choices here, and continue end-to-end. If blocked, work around the problem and finish independent tasks; report exact remaining constraints, do not silently stop at a plan or first-level stub.
+## Art and References
 
-## Source Files
+- `refs/source_examples/` — eight exact user-provided screenshots copied unchanged: three GTA2 city scenes and five Crimsonland survival-combat scenes.
+- `refs/01_diagon_alley.svg` — illustrated overhead fan-game scene board.
+- `refs/02_hogwarts_courtyard.svg` — overhead courtyard scene board.
+- `refs/03_forbidden_forest.svg` — overhead forest combat scene board.
+- `refs/04_quidditch_pitch.svg` — overhead flying-sport arena board.
+- `refs/05_ministry_battle.svg` — overhead Ministry battle board.
+- `refs/character_harry_topdown.svg` — Harry player sprite direction/silhouette sheet.
+- `refs/enemies_topdown.svg` — eight top-down enemy concept designs.
+- `refs/archive_previous/` — earlier, cleaner diagrams, preserved as obsolete historical references. Do not use them as the main visual direction; matching obsolete files were removed from the repository root `refs/` folder.
 
-1. `README.md` — project entry point and reference index.
-2. `CONCEPT.md` — complete game design, one-thumb controls, survival loop, five levels, spells and production target.
-3. `PROMPT_FOR_AGENT.md` — autonomous coding-agent implementation prompt and acceptance checklist.
-4. `refs/01_gloam_academy.svg` — Gloam Academy Rooftops.
-5. `refs/02_lantern_market.svg` — Lantern Ward Night Market.
-6. `refs/03_underline_metro.svg` — The Underline Metro.
-7. `refs/04_briarwood.svg` — Briarwood Perimeter.
-8. `refs/05_starfall_observatory.svg` — Starfall Observatory.
+The new SVGs are hand-authored vector concept boards, not outputs from a configured image-generation model, not playable scenes and not production sprite assets. The image-generation provider was unavailable in this session; attempted delegated image work did not complete, so the references were drawn directly as SVGs. All 12 SVG files (seven current boards plus five archived diagrams) passed XML parsing. Browser screenshot rendering was attempted but failed with OS access/IPC errors; import/render in a capable SVG/game engine remains unverified. Don't report raster-tested or in-engine validation.
 
-SVGs are self-contained authored concept maps, not final sprites or production-ready levels.
+## Character and Enemy Direction
 
-## Five Levels
+Harry: recognizable from the overhead silhouette through round glasses, dark hair, lightning scar, red/gold Gryffindor scarf, dark robe and wand direction. The sheet currently documents four cardinal directions and a larger silhouette breakdown; don't claim a complete 8-direction sprite animation is finished.
 
-1. Gloam Academy Rooftops — gust lanes; Copper Gargoylion.
-2. Lantern Ward Night Market — warning lanterns and temporary safe lanes; The Glass Factor.
-3. The Underline Metro — ghost-train lanes and leyline gates; The Faceless Conductor.
-4. Briarwood Perimeter — telegraphed temporary roots; The Thornhart.
-5. Starfall Observatory — rotating warned safe arc, interruptible phases; The Starfall Orrery.
+Enemy sheet currently outlines: Aragog/giant spider, Dementor, Death Eater, animated armor, Inferi, Cornish pixie, werewolf and basilisk. Each final sprite should retain a readable overhead collision silhouette and distinct movement/attack telegraph.
 
-## Work Completed Before the English Revision
+## Work Completed in This Revision
 
-- Authored the concept, original cast/world, combat progression and five authored level concepts.
-- Created five standalone SVG scene/combat-layout references.
-- Created the master implementation prompt, README, and persistent Handoff instructions.
-- Created the private GitHub repository `Vano3667/HPGTA-Game` and uploaded all four documents and five SVGs to `main`.
-- Validated all five SVGs as well-formed XML locally and verified the remote root contains the four docs and all five references.
-- No game source code, engine project, Android build, device test or gameplay build exists yet.
+- Preserved all eight user-supplied screenshot files unchanged under `refs/source_examples/` and published all eight to the GitHub repository.
+- Created five new fan-game SVG scene boards for the requested Harry Potter locations and published them under `refs/`.
+- Created overhead Harry player design and top-down enemy roster boards and published them under `refs/`.
+- Moved the five previous schematic maps to `refs/archive_previous/` locally and remotely; removed their obsolete root paths.
+- Rewrote README, concept and implementation prompt in English. Defined one-thumb bottom-zone movement, automatic wand/spell attacks, five recognizable canon chapters and autonomous full-scope agent expectations.
+- Image generation/delegation was unavailable; custom vector reference boards were made directly instead. Do not say an image model or subagent generated them.
 
-## Current English Revision
+## Checks / Known Limits
 
-- **Requested change:** all prompts and project information in English; redesign the game around a Vampire Survivors-like auto-attacking survival roguelite; one-handed bottom-screen movement; the development agent works autonomously without asking the user for decisions or clarifications.
-- **Files updated:** `README.md`, `CONCEPT.md`, `PROMPT_FOR_AGENT.md`, `HANDOFF.md`. SVG artwork already contains English labels; no graphic relabeling was needed.
-- **Publication state:** all four English Markdown files are published on private GitHub `main`. The remote root and `refs/` were verified to contain all four Markdown files and five SVG references.
+- All 12 SVG files parsed as XML successfully: seven current concept boards, five archived diagrams.
+- Eight user-provided PNG sources exist locally; all eight were verified on the GitHub `refs/source_examples/` path with expected names and file sizes.
+- English Markdown documents were scanned; no Cyrillic characters were found.
+- GitHub root and reference directories were verified: four English Markdown docs, five new scene boards, two character/enemy boards, eight original screenshot references and five archived diagrams.
+- Browser screenshot preview of SVG failed in this environment with browser OS access/IPC errors; use a renderer in a future environment to inspect and revise art. Continue all independent game work rather than asking the user.
+- Current Android game implementation, SVG engine import, game/Android build and device behavior have not been tested.
+- Two automated upload scripts completed all content updates but returned exit code 1 during cleanup because a temporary Windows path did not exist. The actual uploads completed; remote directory checks confirmed the files are present.
 
-## Implementation Principles
+## Current Session Log
 
-- Inspect the repo and local toolchain before choosing an engine; preserve unrelated work.
-- If no existing project, autonomously choose Godot 4 2D/GDScript unless a clearly better installed toolchain is available; record rationale and versions here.
-- Build/test vertical slices but continue to the full five-level campaign; do not stop after a plan or prototype if more work is possible.
-- Prefer local/offline gameplay, data-driven weapon upgrades, automated combat, strong one-handed mobile usability and readable telegraphs.
-- Never claim tests, Android export or device behavior passed unless actually executed.
-- Before each session ends, log changed files, actual commands/results, unresolved issues and the next concrete task.
+### 2026-11-21 — fan-game visual direction revision
 
-## Checks and Known Limitations
-
-- All five SVGs were revalidated as well-formed XML during this revision.
-- A text scan found no Cyrillic characters in the Markdown project documents.
-- GitHub API verification confirmed the remote root contains `README.md`, `CONCEPT.md`, `PROMPT_FOR_AGENT.md` and `HANDOFF.md`; `refs/` contains the five expected SVGs.
-- A local GitHub CLI clone attempt failed because Git's HTTPS credential acquisition was unavailable. The configured GitHub API integration successfully published the files.
-- The documents and visual references do not constitute a game implementation. Engine import/render, Android build and gameplay have not been tested.
-
-## Session Log
-
-### 2026-11-21 — English brief and control redesign
-
-- **Request:** translate all project information/prompts to English; pivot to automatic-attacking survival roguelite; use one-hand, one-thumb bottom-zone movement; require autonomous work without asking user decisions.
-- **Design decisions:** treat the survival genre as a high-level reference, keep all world/art/UI original; retain five districts, adapt them to escalating timed survival, experience pickups, level-up choices and automatic spell synergies; remove mandatory dual-stick, manual aim/fire and required active buttons.
-- **Next:** inspect the existing repository/toolchain and begin implementing the complete playable campaign autonomously. Do not ask the user for design or engine choices; record decisions and actual test results here.
+- **User request:** use the GTA2-like screenshots and Crimsonland as examples; keep supplied screenshots for future reference; add top-down character and enemy designs; recognizable Harry Potter elements are required; handle failed agents independently.
+- **Decisions:** preserve canon as fan-game content; set Harry as main playable character, familiar spells/creatures/locations; compose five campaign arenas from source screenshots' overhead street/survival readability; maintain the one-thumb automatic-combat loop from earlier approved revision.
+- **Next:** continue autonomous game implementation; read this HANDOFF and the concept first, make engine/design choices independently, and record actual progress here.

@@ -1,173 +1,123 @@
-# Hex District: Curfew — Game Concept
+# Harry Potter: Hex District — Game Concept
 
-> Working title. An original urban-fantasy world and cast. Do not use official characters, names, houses, crests, locations, logos, or other recognizable protected franchise elements.
+> Fan-game concept for an original mobile survival roguelite using recognizable Harry Potter characters, locations, spells and props. This is a non-commercial creative design brief. Replace or license assets appropriately before commercial release.
 
 ## High Concept
 
-**Hex District: Curfew** is a portrait-first Android survival roguelite with a top-down view, dense but readable enemy swarms, automatically triggered spells, and run-defining upgrade combinations. A young urban mage survives escalating nights across five districts of Vesper, gathering spell pages and choosing upgrades while magical wardens close in.
+**Harry Potter: Hex District** is a portrait-first Android survival roguelite inspired by the movement and automatic-fire loop of *Vampire Survivors* and the dense top-down combat readability of *Crimsonland*, presented with the dirty, compact, 1990s city-game density of the user's GTA 2 references.
 
-The broad genre reference is the accessible, movement-focused, auto-attacking survival loop popularized by *Vampire Survivors*: keep moving with one thumb, let the equipped arsenal attack automatically, gather experience, and shape a build through frequent level-up choices. The game must have its own original setting, characters, visual identity, enemies, interface, maps, names, sound, art and systems; do not reproduce another game's assets, exact UI, maps, characters or signature content.
+The player controls Harry Potter from a near-vertical overhead view. One thumb moves him from a control zone at the bottom of the screen; the wand, spells, familiars and passive effects attack automatically. The player survives escalating swarms, gathers experience, chooses upgrades and combines recognizable wizarding-world spells into a build.
 
-**Player promise:** “Keep moving through a living magical city; every run turns a small spell kit into a spectacular survival build.”
+**Important visual target:** not clean fantasy key art, not a 45-degree isometric RPG, and not a generic magic-school illustration. The target is a readable old-school game screen: dark muddy environments, compact map geometry, small characters, heavy texture, strong spell flashes, crowded enemy formations, simple HUD panels and a clear open lane around the player.
 
-## Product Snapshot
+## Core Player Promise
 
-- **Platform:** Android phones and tablets; portrait orientation is the primary target.
-- **Genre:** top-down survival action / auto-attacking roguelite.
-- **Run structure:** five authored districts in sequence, each with its own arena, enemy roster, hazard and boss; aim for a complete run of roughly 20–30 minutes, adjustable through playtesting.
-- **Core input:** one hand, one thumb. The player steers from a touch/virtual-stick zone along the bottom of the screen. Basic attacks, equipped spells and companion attacks fire automatically. No aiming or firing button is required.
-- **Camera:** stable 2D top-down camera that follows the player smoothly and keeps nearby threats visible.
-- **Tone:** adventurous, eerie-but-not-horror, with small humorous details of everyday magical city life.
-- **Performance target:** smooth play on a representative mid-range Android device; establish and record a real benchmark during development rather than claiming an untested frame rate.
+“Keep moving through iconic wizarding locations while Harry's wand fights automatically; build a new spell loadout every run and survive the next minute of chaos.”
 
-## World and Story
+## Platform and Session
 
-The city of **Vesper** was built over five old ley lines. The independent **Gloam Academy** teaches practical urban wardcraft: keeping lifts, streetlamps, trains, gardens and rooftops safe with everyday spells. During the annual Eclipse, the central **Starfall Orrery** misreads ordinary residents as threats. District seals fail, enchanted services turn hostile, and the city begins sealing itself off.
+- Android phones/tablets, portrait-first.
+- One hand / one thumb only during combat.
+- 20–30 minute campaign target, five authored chapters, with shorter practice runs possible.
+- Local/offline first. No mandatory account, ads, analytics, network or purchases in the prototype.
+- Automatic attacks are the default and cannot be replaced by a required manual-aim scheme.
 
-The protagonist, **Mira Vale**, is an apprentice courier sent to restore the five district seals and reach the observatory. She is neither a prophesied hero nor the heir to a famous bloodline; her strength is improvisation and combining spells that were never designed to work together. Short environmental details and brief in-run lines tell the story; long cutscenes are not required.
+## One-Handed Controls
 
-The final reveal is that the Orrery's protective logic has become dangerously overzealous. Mira must interrupt and retune the system, not destroy the city. A short epilogue restores the districts and opens a replayable Night Patrol mode.
+- A floating or fixed virtual-stick / drag-to-move control occupies the lower-left or lower-center safe area.
+- The player can swap the control to the lower-right for the other hand and adjust size, opacity and sensitivity.
+- Harry moves freely around the entire map; the bottom location is only the thumb input zone, not a movement boundary.
+- Wand shots, spell casts, familiars, target selection, XP magnet and ordinary pickups are automatic.
+- Dodging is achieved by movement. An optional one-thumb dash/escape gesture may be added, but no second hand, twin-stick aiming or mandatory attack button is allowed.
+- Level-up cards, pause and settings use large controls and stop combat while open.
+- Support safe areas, cutouts, vibration toggle, screen-shake toggle, damage-flash setting and high-contrast telegraphs.
 
-## Core Run Loop
+## Story Setup
 
-1. Pick a starting discipline and enter a district.
-2. Move continuously with one thumb while the equipped arsenal auto-attacks nearby eligible targets.
-3. Defeat enemies, collect experience pages/gems and watch for readable telegraphs, drops and environmental hazards.
-4. On level-up, pause combat and choose one of three upgrades, a new spell, a passive item or a synergistic evolution.
-5. Survive increasingly dense timed enemy phases and defeat the district boss.
-6. Between districts, select a recovery or build adjustment, then continue with the current run.
-7. Complete all five districts or be defeated. Unlock cosmetic options and new build choices between runs without requiring a stat-grind.
+After a magical disturbance spreads through London and Hogwarts, familiar wards begin classifying students and civilians as hostile. Harry must cross five locations, gather fragments of a broken **Hex District Seal**, and confront the source at the Ministry. The story uses recognizable canon places and names for this fan concept, while the combat arenas and enemy behaviours are designed as original game systems.
 
-### Survival and Progression Rules
+## Automatic Arsenal
 
-- Each district is a timed survival chapter, not just a small cleared room: enemy pressure escalates in authored phases, with breathing windows before major threats.
-- The five districts have a fixed campaign order for the first clear; optional modifiers, encounter variations and reward choices add replay value.
-- Level-up choices pause gameplay, are large enough for touch, and clearly describe the effect and any prerequisite.
-- Weapons/spells have readable base behaviours and meaningful upgrade paths. A small number of compatible maxed spells and passive items can evolve into a distinctive signature spell.
-- No pay-to-win requirement, account, network connection, ads, analytics or microtransactions in the initial game.
+### Starting weapons
 
-## One-Handed Android Controls
+- **Wand Bolt:** automatic nearest-target shot; upgrades add piercing, ricochet, chain hit or faster cadence.
+- **Stupefy Burst:** periodic automatic red stun bolt; upgraded versions can split or briefly interrupt an elite.
+- **Protego Orbit:** a rotating shield rune that absorbs or deflects limited hits and damages close enemies.
+- **Expecto Patronum:** an automatic blue-white guardian pass that clears a lane on a cooldown.
 
-- Use a **single-thumb movement control in the lower portion of the screen**, preferably a floating or fixed virtual stick in the lower-left/lower-center safe area. The touch region must be configurable and comfortable for left- and right-handed players.
-- A simple drag-to-move implementation is acceptable if it is easier to use and does not obscure gameplay; the user should not need two fingers or simultaneous controls.
-- The hero can move throughout the full combat arena. “Movement control at the bottom of the screen” refers to the thumb input/control zone, not a restriction that traps the character in a bottom strip.
-- All ordinary attacks, spell casts, summons, target selection and pickups work automatically while the player moves. There is no mandatory attack, aim, cast or dodge button.
-- Dodging is primarily achieved by moving. If a dash or emergency escape is implemented, it must be optional and operable one-handed (for example, an auto-trigger or a reachable configurable bottom-zone gesture); never make a second hand or rapid multi-touch mandatory.
-- Level-up selections and menus pause the run and use large, accessible controls. Touch the chosen card with the same hand; resume only after a choice.
-- Respect Android display cutouts, navigation bars and safe areas. Allow control-side swap, virtual-stick size/opacity and input sensitivity settings.
-- Include pause/resume, vibration, screen-shake and damage-flash settings. Provide high-contrast telegraphs that do not rely on color alone.
+### Additional spells and synergies
 
-## Auto-Combat and Build Design
+- **Expelliarmus Arc:** automatic curved projectile that disarms or weakens wand enemies.
+- **Incendio Ring:** a timed fire ring around Harry; Crimsonland-like crowd control, with clear red/orange telegraph.
+- **Glacius Field:** slows a visible patch of enemies.
+- **Lumos Familiar:** a floating light that reveals enemies and fires small bolts.
+- **Sectumsempra:** late-run high-risk evolution for an adult/advanced mode only; use clear content rating and accessibility review.
+- **Evolution example:** max Wand Bolt plus a focus passive creates **Chain Lightning Charm**; show the recipe in the level-up UI.
 
-The player makes tactical decisions through movement, route choice and upgrade selection. Auto-combat reduces input load without removing positioning skill.
+## Survival Rules
 
-### Starting Disciplines
+- Timed enemy phases escalate density, speed, elite frequency and projectile complexity.
+- Experience drops are large, bright enough to read at phone scale and attracted by a generous magnet radius.
+- Every level-up pauses the world and offers three large choices: weapon, passive, spell level or evolution ingredient.
+- Keep the hero visually distinct from enemies and spells. Friendly effects use cyan/gold/blue; hostile telegraphs use amber/red/green plus shape and motion.
+- Avoid filling the entire screen with indistinguishable particles. Preserve safe movement paths.
+- Bosses telegraph before jumps, sweeps, charges and area attacks. Use audio cues and shape, not color alone.
 
-- **Spark:** frequent straight bolts; upgrades add piercing, chaining or a short ricochet.
-- **Frost:** automatically places brief slowing fields and fires icy shards; controls lanes and approaching crowds.
-- **Aether:** rotating ward-runes orbit the player, absorb/deflect a limited number of hits, and damage close threats.
+## Five Campaign Chapters
 
-### Example Spells and Synergies
+### 1. Diagon Alley — “Curfew on the Alley”
 
-- **Comet Mark:** periodically marks a visible ground zone and detonates after a clear warning. Frost extends the slow; Spark triggers an extra burst.
-- **Paper Familiar:** circles Mira and automatically attacks a nearby target; upgrades change projectile, cadence or orbit.
-- **Mirror Echo:** leaves a decoy after a timed or optional dash, drawing a telegraphed attack away from Mira.
-- **Thunder Stitch:** links two marks with a damaging line, especially effective in alleys and metro platforms.
-- **Evolution example:** maxed Spark plus a compatible focus item unlocks a broad chain-lightning spell. Keep recipes discoverable and explain the result in the upgrade UI.
+- Wet cobblestone, brick shop fronts, **Ollivanders**, **Gringotts**, cauldrons, broom displays and cramped road lanes.
+- Enemies: runaway enchanted objects, pixies, hostile masked wizards and animated shop displays.
+- Hazard: shop signs and street lamps flash before a short lane burst; alley clutter is cover but never a dead end.
+- Boss: **The Alley Warden**, a cursed armored shop guardian with wand rings and a clear central safe gap.
+- Reference: `refs/01_diagon_alley.svg` and saved user example screenshots in `refs/source_examples/`.
 
-### Readability and Fairness
+### 2. Hogwarts Courtyard — “Castle Under Lock”
 
-- Enemy attacks visibly telegraph shape, target area and timing before damage occurs. Use silhouette and animation as well as color.
-- Preserve safe movement routes; do not fill the entire screen with indistinguishable bullets, particles or UI.
-- Give major attacks an audible cue with independent volume control. Avoid sudden loudness peaks and excessive flashing.
-- Make the player, pickups, hostile attacks and friendly projectiles distinguishable on a phone-sized screen and in color-vision accessibility modes.
-- Enemies should be dangerous through varied approach and projectile patterns, not only inflated health.
-- Provide a simple recent-damage/defeat explanation where practical.
+- Recognizable Hogwarts stone, Great Hall roof line, courtyard, house crest, stair marks and castle corridors.
+- Enemies: animated armor, spell books, pixies and rogue portraits.
+- Hazard: moving staircase glyphs shift a route after a visible warning; keep a second open path.
+- Boss: **The Stone Sentinel**, with shield cones and a slow ground slam.
+- Reference: `refs/02_hogwarts_courtyard.svg`.
 
-## Five Districts / Levels
+### 3. Forbidden Forest — “Patronus at Midnight”
 
-| # | District | Visual identity | Signature survival mechanic | Boss |
-|---|---|---|---|---|
-| 1 | Gloam Academy Rooftops | Wet slate, copper pipes, warm windows | Telegraphing gusts subtly nudge Mira and drift light projectiles | Copper Gargoylion |
-| 2 | Lantern Ward Night Market | Colorful awnings, stalls and floating lanterns | Lantern colors warn of sector bursts; disabled lanterns create temporary safe lanes | The Glass Factor |
-| 3 | The Underline Metro | Tiled platforms, rails, cold cyan lighting | A ghost train's full path is shown before it rushes through; leyline gates open alternate routes | The Faceless Conductor |
-| 4 | Briarwood Perimeter | Root paths, ferns, fireflies, moonlit clearings | Roots visibly rise before briefly closing a lane | The Thornhart |
-| 5 | Starfall Observatory | Violet stone, brass rings, star charts | A clearly highlighted safe arc rotates in advance; side runes can interrupt a phase | The Starfall Orrery |
+- Dark trees, mud paths, the **Dementors**, **Aragog** spiders and a blue-white stag **Patronus**.
+- Enemies: spiders, Dementor wisps, centaurs and hostile plant clusters.
+- Hazard: roots and fog zones close lanes only after a clear pre-warning.
+- Boss: **Aragog**, with web telegraphs and a multi-leg ring attack; Expecto Patronum creates an obvious counter-window.
+- Reference: `refs/03_forbidden_forest.svg`.
 
-### Level 1 — Gloam Academy Rooftops: “Night Rounds”
+### 4. Quidditch Pitch — “The Golden Snitch Run”
 
-- **Purpose:** teach movement, auto-attacks, experience pickups, level-up choices and basic telegraphs.
-- **Layout:** several connected roof decks and broad routes around a greenhouse, tower and chimneys. Landmarks remain legible when the screen is busy.
-- **Enemy roster:** Yard Spark (slow single bolts), Bell Warden (brief cone attack), tiny airborne page-familiar (light pressure, clear silhouette).
-- **Hazard:** gust lanes glow and ripple before pushing Mira or drifting selected light projectiles. The player can route around the gust.
-- **Boss:** Copper Gargoylion marks its landing zone, leaps, then sends a ring of projectiles with a wide safe gap. Later it adds three aimed bolts. It must be readable on a narrow portrait viewport.
-- **Reward:** district seal and a familiar-related starting build option.
+- Grass pitch, six goal hoops, stands, broom flight lanes, **Golden Snitch**, Quaffle and Bludgers.
+- Enemies: rogue Bludgers, hostile training dummies, flying pixies and opposing masked fliers.
+- Hazard: marked flight lanes sweep across the arena; safe gaps rotate and stay visible.
+- Boss: **The Snitch Storm**, a swarm-boss that creates a rotating golden ring with a readable gap.
+- Reference: `refs/04_quidditch_pitch.svg`.
 
-### Level 2 — Lantern Ward Night Market: “Too Many Customers”
+### 5. Ministry of Magic — “Department of Mysteries”
 
-- **Purpose:** teach route selection through partial cover and readable overlapping attack zones.
-- **Layout:** three stall rows, a central square/canal and short side alleys with multiple ways around the market.
-- **Enemies:** Market Double (briefly mirrors Mira's recent movement), Courier Beetle (fast but fragile), Hollow Mannequin (slowly occupies a lane).
-- **Hazard:** suspicious lanterns change silhouette/glow before a sector burst. Automatically fired spells can extinguish a lantern when it is a valid target, creating a temporary opening.
-- **Boss:** The Glass Factor creates mirror copies; the real one has a distinct warm shadow. It then uses two crossing fans with a clear central path.
+- Dark tile floors, Ministry corridors, **Floo fireplaces**, prophecy shelves and the circular prophecy chamber.
+- Enemies: Death Eaters, Inferi, spell echoes and enchanted security constructs.
+- Hazard: prophecy orbs glow before burst lines; keep the centre readable and leave escape routes around shelves.
+- Boss: **The Hex Disturbance**, three phases: green curse fans, blue-white defensive rings, and a final exposed seal core.
+- Reference: `refs/05_ministry_battle.svg`.
 
-### Level 3 — The Underline Metro: “Last Train”
+## Art Direction
 
-- **Purpose:** train reading of linear threats and movement between platforms.
-- **Layout:** two long platforms, track trenches and leyline gates. Keep enough width for one-thumb evasion; do not use camera motion to hide hazards.
-- **Enemies:** Signal Wisp marks a rail, Dust Conductor fires a slow fan, echo-passengers appear with a clear arrival warning.
-- **Hazard:** the ghost train illuminates its complete lane before entering. A platform pocket or alternate leyline crossing provides a route to safety.
-- **Boss:** The Faceless Conductor warns with a luminous rail stripe, attacks along it, and follows with two cross-lines leaving a viable escape window.
+- Use the user-provided screenshots in `refs/source_examples/` as style anchors: compact top-down composition, rough low-resolution texture, dirty green/brown/grey palette, readable right-edge HUD, dense crowds and strong spell trails.
+- Use the GTA 2 references for urban density, street/vehicle clutter and map readability; use the Crimsonland references for swarm density, automatic projectile patterns, gore-free impact marks, XP pressure and ring-shaped attacks.
+- The five authored SVGs are layout/style boards, not final raster sprites. The character and enemy sheets specify the strict overhead silhouettes required for gameplay scale.
+- Do not use a cinematic isometric camera. The camera must read as nearly vertical overhead and keep the player's movement lane visible.
 
-### Level 4 — Briarwood Perimeter: “The Forest Answers”
+## Required Concept Art
 
-- **Purpose:** contrast urban scenes with open organic routes and temporary terrain changes.
-- **Layout:** an open loop around a moonlit clearing; tree clusters stay near edges so the central combat area remains readable; at least two passages stay open.
-- **Enemies:** Root Snapper (slow lunge), decoy Firefly (diverts attention but does not cause surprise damage), Spore Witch (bounded cloud with visible edge).
-- **Hazard:** roots visibly lift the ground for at least 0.8 seconds before blocking a route. Never seal every exit or trap Mira in a dead end.
-- **Boss:** The Thornhart alternates a marked leap, a root wave and a recovery window; patterns have stable timing and silhouettes.
+- `refs/character_harry_topdown.svg`: Harry overhead sprite sheet with round glasses, lightning scar, Gryffindor red/gold, dark hair and wand direction.
+- `refs/enemies_topdown.svg`: Aragog/spider, Dementor, Death Eater, animated armor, Inferi swarm, Cornish pixie, werewolf and basilisk overhead enemy roster.
+- These sheets are concept references; final game assets should be authored as cohesive top-down sprites, with size variants and clear collision silhouettes.
 
-### Level 5 — Starfall Observatory: “Retuning”
+## Production Acceptance
 
-- **Purpose:** combine established skills in a final encounter without introducing an untelegraphed new control system.
-- **Layout:** circular room, central Orrery, an outer ring route and four small cover points. Keep the player and every entrance/exit visible.
-- **Enemies:** short mixed waves of familiar foes with altered timing; limit simultaneous elite threats.
-- **Hazard:** a safe arc rotates clockwise after a visible warning. Two side runes can briefly interrupt the rotation.
-- **Boss:** The Starfall Orrery has three phases: (1) orbiting projectiles with wide gaps; (2) rotating safe arc plus two warned linear attacks; (3) exposed core after activating side runes. Reward positioning and attack uptime; avoid an opaque DPS check.
-- **Epilogue:** Mira retunes the defense protocol, the districts reopen and the replayable Night Patrol mode unlocks.
-
-## Visual Direction
-
-- Original top-down urban-fantasy pixel art / carefully controlled low-resolution art. Compact blocky geometry, deep navy/violet shadow, warm windows, copper details and distinct magical highlights.
-- Evoke the energy of a gritty 1990s city action game viewed from above, but do not reproduce any specific game's maps, HUD, logos, characters, sprites or signature locations.
-- Magical city details should feel practical and lived in: warded streetlamps, copper pipes, enchanted service kiosks, floating spell pages and animated roof gardens.
-- Maintain clean silhouettes and readable movement corridors. Do not let decorative roof geometry imply false collision.
-- Friendly attacks may use turquoise/gold; hostile telegraphs may use amber/coral plus distinct shapes and motion. Validate in a color-vision mode.
-- The five SVG files in `refs/` are authored composition/color/combat-lane references, not final sprites or production-ready maps.
-
-## Audio
-
-- Low-fi electronic night-city music with a shared motif and a distinct timbral layer per district.
-- Short, differentiable spell/enemy sounds; a gentle sound cue accompanies major telegraphs.
-- Separate music, effects and warning volumes; avoid harsh peaks.
-
-## Production Scope and Acceptance
-
-The intended deliverable is a complete, playable five-district campaign prototype, not merely a concept or isolated first-level mock-up. Develop in short vertical slices, but continue autonomously through the full scope.
-
-1. Inspect the existing project and environment. Preserve existing user work. Choose a suitable engine and implementation path based on the repository; if none exists, Godot 4 / 2D / GDScript is a reasonable default. Record the decision and any environment limitations in `HANDOFF.md`.
-2. Build and test the one-thumb movement plus automatic combat loop first.
-3. Implement upgrade drafts, experience collection, survival pacing, pause and run restart.
-4. Deliver all five authored districts with their stated signature mechanic and boss, plus a complete win/defeat loop.
-5. Validate portrait layouts, safe areas, one-handed touch reach, performance and save behavior. Build an APK if the environment supports it; otherwise give exact reproducible export steps and accurately record what remains unverified.
-6. Finish with clear launch/build instructions, known issues and an up-to-date `HANDOFF.md`.
-
-**Performance target:** smooth on an agreed representative mid-range Android device; measure and report actual profiling/test results.
-
-## Visual References
-
-- [01 — Gloam Academy Rooftops](refs/01_gloam_academy.svg)
-- [02 — Lantern Ward Night Market](refs/02_lantern_market.svg)
-- [03 — The Underline Metro](refs/03_underline_metro.svg)
-- [04 — Briarwood Perimeter](refs/04_briarwood.svg)
-- [05 — Starfall Observatory](refs/05_starfall_observatory.svg)
+The agent must autonomously inspect the repository, choose the most practical engine, build and test the complete five-chapter playable prototype, and update `HANDOFF.md` every session. It must not ask the user to choose an engine, resolve design ambiguity, approve a change or prioritize a task. When a choice is unspecified, use the brief, pick a sensible default, record it and proceed. If Android export is unavailable, finish every runnable alternative and record exact unverified steps.

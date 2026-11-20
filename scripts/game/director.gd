@@ -45,16 +45,21 @@ func step(delta: float) -> void:
             spawn_t = 1.8
             _spawn_batch(ch, 2, mult)
         else:
-            spawn_t = lerpf(1.1, 0.4, k)
-            _spawn_batch(ch, 2 + int(k * 4.0) + index, mult)
+            # Gentle opening that ramps to a dense swarm by the end of the chapter.
+            spawn_t = lerpf(1.5, 0.4, k)
+            _spawn_batch(ch, 1 + int(k * 5.0) + index, mult)
     if not boss_spawned:
         elite_t -= delta
         if elite_t <= 0.0:
             elite_t = 40.0
             w.spawn_enemy(_pick(ch), _edge_pos(), true, mult)
         if w.time >= Chapters.SURVIVE_TIME:
+            # The boss arrives with a shockwave that dispels the crowd, so the duel stays readable
+            # and automatic spells can actually reach the boss.
             boss_spawned = true
+            _wipe(true)
             w.spawn_boss(ch.boss)
+            spawn_t = 4.0
     _hazards(delta, ch.hazard)
 
 
@@ -64,17 +69,24 @@ func on_boss_dead() -> void:
     _cleanup = true
 
 
+# Remove every regular enemy and hostile curse. Optionally leave their XP behind.
+func _wipe(drop_xp: bool) -> void:
+    w.bolts = []
+    w.pending = []
+    for e in w.enemies:
+        if e.hp > 0.0 and not e.boss:
+            e.hp = 0.0
+            w.add_fx({"kind": "ring", "pos": e.pos, "r0": 2.0, "r1": e.r * 2.0, "col": Color("f0d278"), "life": 0.3})
+            if drop_xp:
+                w._drop_gem(e.pos, int(e.xp))
+
+
 # After the boss falls: wipe remaining threats, let the player vacuum XP, then end the chapter.
 func _after_boss(delta: float) -> void:
     if _cleanup:
         _cleanup = false
-        w.bolts = []
         w.hazards = []
-        w.pending = []
-        for e in w.enemies:
-            if e.hp > 0.0:
-                e.hp = 0.0
-                w.add_fx({"kind": "ring", "pos": e.pos, "r0": 2.0, "r1": e.r * 2.0, "col": Color("f0d278"), "life": 0.3})
+        _wipe(false)
     clear_t -= delta
     if clear_t <= 0.0 and not _done:
         _done = true

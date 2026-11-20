@@ -6,7 +6,7 @@ const CURSE := Color("5de46a")
 
 # ai: chase | weave | ranged | charge. look: which code-drawn sprite art.gd uses.
 const TYPES := {
-    "cauldron": {"hp": 16.0, "speed": 44.0, "r": 8.0, "dmg": 7.0, "xp": 1, "ai": "chase", "look": "blob", "col": Color("2b2a2e"), "col2": Color("7be06a")},
+    "cauldron": {"hp": 11.0, "speed": 44.0, "r": 8.0, "dmg": 7.0, "xp": 1, "ai": "chase", "look": "blob", "col": Color("2b2a2e"), "col2": Color("7be06a")},
     "pixie": {"hp": 7.0, "speed": 86.0, "r": 5.0, "dmg": 4.0, "xp": 1, "ai": "weave", "look": "pixie", "col": Color("9ce8ec"), "col2": Color("d1ffff")},
     "display": {"hp": 46.0, "speed": 30.0, "r": 10.0, "dmg": 10.0, "xp": 3, "ai": "chase", "look": "box", "col": Color("916a46"), "col2": Color("d39b4d")},
     "masked": {"hp": 24.0, "speed": 38.0, "r": 8.0, "dmg": 8.0, "xp": 3, "ai": "ranged", "look": "wizard", "col": Color("2a2230"), "col2": Color("ff7a2a")},
@@ -29,12 +29,12 @@ const TYPES := {
 # patterns[phase] lists the attacks a boss cycles through; phases switch at 66% and 33% health.
 const BOSSES := {
     "warden": {
-        "name": "The Alley Warden", "hp": 1500.0, "speed": 40.0, "r": 20.0, "dmg": 16.0, "look": "armor",
+        "name": "The Alley Warden", "hp": 1100.0, "speed": 40.0, "r": 20.0, "dmg": 16.0, "look": "armor",
         "col": Color("4f4a42"), "col2": Color("eecc63"), "bolt": Color("ff7a2a"), "tell": 0.95, "rest": 1.5, "patronus_weak": false,
         "patterns": [["ring", "charge"], ["ring", "fan", "charge"], ["ring", "summon", "fan"]],
     },
     "sentinel": {
-        "name": "The Stone Sentinel", "hp": 2600.0, "speed": 30.0, "r": 24.0, "dmg": 20.0, "look": "armor",
+        "name": "The Stone Sentinel", "hp": 2000.0, "speed": 30.0, "r": 24.0, "dmg": 20.0, "look": "armor",
         "col": Color("6a6d66"), "col2": Color("c4a149"), "bolt": Color("ff7a2a"), "tell": 1.0, "rest": 1.4, "patronus_weak": false,
         "patterns": [["fan", "slam"], ["fan", "slam", "summon"], ["slam", "fan", "slam", "ring"]],
     },

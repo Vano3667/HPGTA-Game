@@ -21,7 +21,7 @@ defaults:
 jobs:
   test:
     name: Import and headless smoke test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
       image: barichello/godot-ci:4.3
@@ -47,7 +47,7 @@ jobs:
   android:
     name: Android debug APK
     needs: test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
       image: barichello/godot-ci:4.3

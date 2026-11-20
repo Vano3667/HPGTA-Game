@@ -1,22 +1,22 @@
-# Hex District: Curfew — пакет концепта
+# Hex District: Curfew
 
-Оригинальный концепт Android top-down roguelite / bullet hell в ночном городе магов.
+An original portrait-first Android survival roguelite: one-thumb movement from the lower part of the screen, automatic attacks, escalating enemy swarms and five magical-city districts.
 
-## Состав
+## Project Files
 
-- [CONCEPT.md](CONCEPT.md) — полный игровой концепт, сюжет, боевой цикл, механики и дизайн пяти уровней.
-- [PROMPT_FOR_AGENT.md](PROMPT_FOR_AGENT.md) — мастер-промт для агента-разработчика.
-- [HANDOFF.md](HANDOFF.md) — обязательная передача контекста будущему агенту.
-- [refs/](refs/) — пять авторских SVG-референсов уровней.
+- [CONCEPT.md](CONCEPT.md) — complete game design, story, survival loop, one-handed controls, spells and five districts.
+- [PROMPT_FOR_AGENT.md](PROMPT_FOR_AGENT.md) — autonomous build prompt for a coding agent; work end-to-end without asking the user for decisions.
+- [HANDOFF.md](HANDOFF.md) — required persistent project status, decisions, checks and next steps for the next agent.
+- [`refs/`](refs/) — five self-contained SVG concept maps.
 
-## Референсы
+## Level References
 
-| Район | Векторный референс |
+| District | Reference |
 |---|---|
-| Крыши Академии Глоам | ![Крыши Академии Глоам](refs/01_gloam_academy.svg) |
-| Ночной рынок Лантерн | ![Ночной рынок Лантерн](refs/02_lantern_market.svg) |
-| Метро «Андерлайн» | ![Метро «Андерлайн»](refs/03_underline_metro.svg) |
-| Опушка Брайарвуда | ![Опушка Брайарвуда](refs/04_briarwood.svg) |
-| Обсерватория Старопада | ![Обсерватория Старопада](refs/05_starfall_observatory.svg) |
+| Gloam Academy Rooftops | ![Gloam Academy Rooftops](refs/01_gloam_academy.svg) |
+| Lantern Ward Night Market | ![Lantern Ward Night Market](refs/02_lantern_market.svg) |
+| The Underline Metro | ![The Underline Metro](refs/03_underline_metro.svg) |
+| Briarwood Perimeter | ![Briarwood Perimeter](refs/04_briarwood.svg) |
+| Starfall Observatory | ![Starfall Observatory](refs/05_starfall_observatory.svg) |
 
-Референсы — авторские концепт-схемы, не финальные игровые ассеты. Мир и персонажи оригинальные.
+The references are concept layouts, not final production art. The game world, characters and assets must remain original.

@@ -1,158 +1,173 @@
-# Hex District: Curfew — концепт игры
+# Hex District: Curfew — Game Concept
 
-> Рабочее название. Оригинальный мир о городской магии и тайной школе; никаких официальных персонажей, названий, гербов или локаций чужих франшиз.
+> Working title. An original urban-fantasy world and cast. Do not use official characters, names, houses, crests, locations, logos, or other recognizable protected franchise elements.
 
-## Короткий питч
+## High Concept
 
-**Hex District: Curfew** — мобильный top-down action roguelite с bullet-hell боями: молодая чародейка пробивается по ночному городу, где после поломки защитных печатей магические районы стали враждебными. Игрок двигается по арене, уклоняется от хорошо читаемых залпов и собирает комбинации заклинаний. Визуальный ориентир — плотный, контрастный городской экшен 90-х с видом сверху, грубоватой пиксельной геометрией и неоновым светом, смешанный с оригинальной эстетикой волшебной школы.
+**Hex District: Curfew** is a portrait-first Android survival roguelite with a top-down view, dense but readable enemy swarms, automatically triggered spells, and run-defining upgrade combinations. A young urban mage survives escalating nights across five districts of Vesper, gathering spell pages and choosing upgrades while magical wardens close in.
 
-**Обещание игроку:** «каждый забег превращает знакомый городской квартал в магический боевой лабиринт, а найденные заклинания собираются в непредсказуемый билд».
+The broad genre reference is the accessible, movement-focused, auto-attacking survival loop popularized by *Vampire Survivors*: keep moving with one thumb, let the equipped arsenal attack automatically, gather experience, and shape a build through frequent level-up choices. The game must have its own original setting, characters, visual identity, enemies, interface, maps, names, sound, art and systems; do not reproduce another game's assets, exact UI, maps, characters or signature content.
 
-## Основные параметры
+**Player promise:** “Keep moving through a living magical city; every run turns a small spell kit into a spectacular survival build.”
 
-- Платформа: Android, сначала портретная ориентация; по возможности поддержать landscape без переделки логики.
-- Жанр: top-down arena shooter / bullet-hell / roguelite.
-- Целевая сессия: 15–20 минут на полный маршрут; около 2–3 минут на уровень с короткими паузами выбора улучшения.
-- Игрок: один персонаж, вид сверху, читаемый силуэт и яркий контур для мобильного экрана.
-- Тон: приключенческий, немного мрачный, не хоррор; смешные бытовые детали магического города.
-- Камера: ортографическая/2D, стабильный top-down; умеренно следует за героем, не вращается.
-- Боевая плотность: узкие серии пуль и телеграфируемые атаки, но всегда остаётся безопасный маршрут.
+## Product Snapshot
 
-## Мир и сюжет
+- **Platform:** Android phones and tablets; portrait orientation is the primary target.
+- **Genre:** top-down survival action / auto-attacking roguelite.
+- **Run structure:** five authored districts in sequence, each with its own arena, enemy roster, hazard and boss; aim for a complete run of roughly 20–30 minutes, adjustable through playtesting.
+- **Core input:** one hand, one thumb. The player steers from a touch/virtual-stick zone along the bottom of the screen. Basic attacks, equipped spells and companion attacks fire automatically. No aiming or firing button is required.
+- **Camera:** stable 2D top-down camera that follows the player smoothly and keeps nearby threats visible.
+- **Tone:** adventurous, eerie-but-not-horror, with small humorous details of everyday magical city life.
+- **Performance target:** smooth play on a representative mid-range Android device; establish and record a real benchmark during development rather than claiming an untested frame rate.
 
-Город **Веспер** построен поверх пяти старых лей-линий. В центре находится независимая **Академия Глоам**, обучающая магов городским защитным чарам. В ночь ежегодного Затмения отказывает центральный Астролябийный Узел: пять районных печатей гаснут, а служебные духи, зачарованные автоматы и зачарованные растения выходят из-под контроля.
+## World and Story
 
-Главная героиня — **Мира Вейл**, ученица-курьер Академии. Её задача — пройти пять районов, восстановить печати и добраться до обсерватории. Она не «избранная» и не наследница знаменитого рода: преимущество Миры — импровизация и умение соединять несовместимые заклинания. История подаётся через короткие реплики, вывески и окружение, не длинные кат-сцены.
+The city of **Vesper** was built over five old ley lines. The independent **Gloam Academy** teaches practical urban wardcraft: keeping lifts, streetlamps, trains, gardens and rooftops safe with everyday spells. During the annual Eclipse, the central **Starfall Orrery** misreads ordinary residents as threats. District seals fail, enchanted services turn hostile, and the city begins sealing itself off.
 
-**Главный конфликт:** городской Астролябийный Узел пытается решить проблему, изолируя районы; финальная битва показывает, что его защитная логика ошибочно считает всех жителей угрозой. Финал — отключить и перенастроить узел, сохранив город, а не уничтожить его.
+The protagonist, **Mira Vale**, is an apprentice courier sent to restore the five district seals and reach the observatory. She is neither a prophesied hero nor the heir to a famous bloodline; her strength is improvisation and combining spells that were never designed to work together. Short environmental details and brief in-run lines tell the story; long cutscenes are not required.
 
-## Игровой цикл
+The final reveal is that the Orrery's protective logic has become dangerously overzealous. Mira must interrupt and retune the system, not destroy the city. A short epilogue restores the districts and opens a replayable Night Patrol mode.
 
-1. Войти в район и выбрать одну стартовую школу магии.
-2. Пережить 3 волны врагов, исследуя небольшую арену с несколькими маршрутами и укрытиями.
-3. Подбирать опыт/страницы заклинаний; между волнами выбрать одно из трёх улучшений.
-4. Победить босса района и получить районную печать.
-5. Между уровнями сделать короткий выбор: восстановить здоровье, купить одно улучшение за найденные искры или заменить заклинание.
-6. Пройти все пять районов; после поражения сохранить только косметические открытия и ограниченный прогресс Кодекса, не превращая мета-прогрессию в обязательный гринд.
+## Core Run Loop
 
-**Рогалайт-слой:** набор предложений улучшений, их редкость и вторичные маршруты меняются между забегами; сами районы и боссы остаются авторскими и узнаваемыми. Смерть завершает забег. Постоянные открытия дают новые варианты билдов, а не обязательное преимущество в цифрах.
+1. Pick a starting discipline and enter a district.
+2. Move continuously with one thumb while the equipped arsenal auto-attacks nearby eligible targets.
+3. Defeat enemies, collect experience pages/gems and watch for readable telegraphs, drops and environmental hazards.
+4. On level-up, pause combat and choose one of three upgrades, a new spell, a passive item or a synergistic evolution.
+5. Survive increasingly dense timed enemy phases and defeat the district boss.
+6. Between districts, select a recovery or build adjustment, then continue with the current run.
+7. Complete all five districts or be defeated. Unlock cosmetic options and new build choices between runs without requiring a stat-grind.
 
-## Управление и интерфейс Android
+### Survival and Progression Rules
 
-- Левая половина экрана: виртуальный стик/drag-to-move; регулируемая зона захвата и опция фиксированного стика.
-- Базовая атака: автонаведение на ближайшую подходящую цель; игрок отвечает за перемещение и позиционирование.
-- Правая нижняя часть: крупная кнопка рывка/уклонения с заметным индикатором перезарядки.
-- Активное заклинание — отдельная кнопка, если оно есть в билде; удержание/перетаскивание правой половины экрана включает ручную прицельную опцию.
-- Во время выбора улучшений игра ставится на паузу. Не полагаться на точные мелкие тапы.
-- Переназначаемый размер кнопок, сила вибрации, контрастный режим телеграфов, настройка автонаведения, отключаемое screen shake.
-- Без обязательного онлайна; сохранение локальное. Вертикальный safe area учитывает вырезы и системные панели.
+- Each district is a timed survival chapter, not just a small cleared room: enemy pressure escalates in authored phases, with breathing windows before major threats.
+- The five districts have a fixed campaign order for the first clear; optional modifiers, encounter variations and reward choices add replay value.
+- Level-up choices pause gameplay, are large enough for touch, and clearly describe the effect and any prerequisite.
+- Weapons/spells have readable base behaviours and meaningful upgrade paths. A small number of compatible maxed spells and passive items can evolve into a distinctive signature spell.
+- No pay-to-win requirement, account, network connection, ads, analytics or microtransactions in the initial game.
 
-## Боевая система
+## One-Handed Android Controls
 
-### Стартовые школы
+- Use a **single-thumb movement control in the lower portion of the screen**, preferably a floating or fixed virtual stick in the lower-left/lower-center safe area. The touch region must be configurable and comfortable for left- and right-handed players.
+- A simple drag-to-move implementation is acceptable if it is easier to use and does not obscure gameplay; the user should not need two fingers or simultaneous controls.
+- The hero can move throughout the full combat arena. “Movement control at the bottom of the screen” refers to the thumb input/control zone, not a restriction that traps the character in a bottom strip.
+- All ordinary attacks, spell casts, summons, target selection and pickups work automatically while the player moves. There is no mandatory attack, aim, cast or dodge button.
+- Dodging is primarily achieved by moving. If a dash or emergency escape is implemented, it must be optional and operable one-handed (for example, an auto-trigger or a reachable configurable bottom-zone gesture); never make a second hand or rapid multi-touch mandatory.
+- Level-up selections and menus pause the run and use large, accessible controls. Touch the chosen card with the same hand; resume only after a choice.
+- Respect Android display cutouts, navigation bars and safe areas. Allow control-side swap, virtual-stick size/opacity and input sensitivity settings.
+- Include pause/resume, vibration, screen-shake and damage-flash settings. Provide high-contrast telegraphs that do not rely on color alone.
 
-- **Искра:** быстрые прямые снаряды; усиления дают пробивание, рикошет или короткий разряд между целями.
-- **Иней:** замедляющее поле и веер ледяных осколков; хорош для контроля проходов.
-- **Эфир:** орбитальные руны-щиты, которые отражают один снаряд и наносят контактный урон.
+## Auto-Combat and Build Design
 
-### Дополнительные заклинания и примеры синергий
+The player makes tactical decisions through movement, route choice and upgrade selection. Auto-combat reduces input load without removing positioning skill.
 
-- **Кометная метка:** оставляет на земле краткий круг поражения. С «Инеем» круг дольше держится; с «Искрой» детонирует при попадании.
-- **Бумажный фамильяр:** кружит рядом и периодически атакует ближайшую цель. Улучшения меняют тип снаряда и траекторию.
-- **Зеркальный шаг:** после рывка остаётся приманка, провоцирующая атаку врага; взрыв приманки создаёт окно для контратаки.
-- **Громовой шов:** линия электричества между двумя метками; сильна в узких коридорах.
+### Starting Disciplines
 
-Не больше 4 одновременно активных источников атаки на раннем прототипе. Отдельно показывать цвет/форму дружественных и вражеских снарядов. Вражеский залп не должен перекрывать героя или телеграф следующей атаки.
+- **Spark:** frequent straight bolts; upgrades add piercing, chaining or a short ricochet.
+- **Frost:** automatically places brief slowing fields and fires icy shards; controls lanes and approaching crowds.
+- **Aether:** rotating ward-runes orbit the player, absorb/deflect a limited number of hits, and damage close threats.
 
-### Ритм и честность bullet-hell
+### Example Spells and Synergies
 
-- Враги сначала показывают телеграф (форма и цвет), затем выпускают атаку.
-- Основной залп: 3–7 снарядов с паузами; большие веерные паттерны — только у элит и боссов.
-- У каждой арены есть минимум два маршрута обхода; укрытия помогают, но не запирают героя.
-- Рывок даёт короткую неуязвимость и имеет визуально слышимый момент окончания.
-- Смерть объяснима: журнал последних источников урона и понятная причина поражения.
+- **Comet Mark:** periodically marks a visible ground zone and detonates after a clear warning. Frost extends the slow; Spark triggers an extra burst.
+- **Paper Familiar:** circles Mira and automatically attacks a nearby target; upgrades change projectile, cadence or orbit.
+- **Mirror Echo:** leaves a decoy after a timed or optional dash, drawing a telegraphed attack away from Mira.
+- **Thunder Stitch:** links two marks with a damaging line, especially effective in alleys and metro platforms.
+- **Evolution example:** maxed Spark plus a compatible focus item unlocks a broad chain-lightning spell. Keep recipes discoverable and explain the result in the upgrade UI.
 
-## Пять уровней
+### Readability and Fairness
 
-| № | Район | Визуальный ключ | Уникальная механика | Босс |
+- Enemy attacks visibly telegraph shape, target area and timing before damage occurs. Use silhouette and animation as well as color.
+- Preserve safe movement routes; do not fill the entire screen with indistinguishable bullets, particles or UI.
+- Give major attacks an audible cue with independent volume control. Avoid sudden loudness peaks and excessive flashing.
+- Make the player, pickups, hostile attacks and friendly projectiles distinguishable on a phone-sized screen and in color-vision accessibility modes.
+- Enemies should be dangerous through varied approach and projectile patterns, not only inflated health.
+- Provide a simple recent-damage/defeat explanation where practical.
+
+## Five Districts / Levels
+
+| # | District | Visual identity | Signature survival mechanic | Boss |
 |---|---|---|---|---|
-| 1 | Крыши Академии Глоам | Мокрый сланец, медь, окна-маяки | Порывы ветра толкают снаряды и слегка смещают героя | Медный Гаргульон — учит чтению веерных залпов |
-| 2 | Ночной рынок Лантерн | Навесы, фонари, разноцветные прилавки | Подозрительные фонари предупреждают о секторном взрыве; можно выключить источник | Стеклянный Торговец — зеркальные копии и безопасные просветы |
-| 3 | Метро «Андерлайн» | Плитка, рельсы, холодные бирюзовые лампы | Прибытие призрачного поезда — видимая опасная полоса; переключатели лей-линий открывают обходы | Кондуктор Без Лица — атаки вдоль рельсов с заранее заметной подсветкой |
-| 4 | Опушка Брайарвуда | Корни, папоротник, светляки, просветы в кроне | Корни ненадолго перекрывают маршрут, но заранее поднимают листву/почву | Терновый Олень — круговые корневые волны и короткие окна уязвимости |
-| 5 | Обсерватория Старопада | Фиолетовый камень, латунные кольца, звёздные метки | Безопасные сектора и орбиты вращаются по часовой стрелке; узел переключает фазу по телеграфу | Астролябийный Узел — три читаемые фазы, в финале нужно атаковать открытое ядро |
+| 1 | Gloam Academy Rooftops | Wet slate, copper pipes, warm windows | Telegraphing gusts subtly nudge Mira and drift light projectiles | Copper Gargoylion |
+| 2 | Lantern Ward Night Market | Colorful awnings, stalls and floating lanterns | Lantern colors warn of sector bursts; disabled lanterns create temporary safe lanes | The Glass Factor |
+| 3 | The Underline Metro | Tiled platforms, rails, cold cyan lighting | A ghost train's full path is shown before it rushes through; leyline gates open alternate routes | The Faceless Conductor |
+| 4 | Briarwood Perimeter | Root paths, ferns, fireflies, moonlit clearings | Roots visibly rise before briefly closing a lane | The Thornhart |
+| 5 | Starfall Observatory | Violet stone, brass rings, star charts | A clearly highlighted safe arc rotates in advance; side runes can interrupt a phase | The Starfall Orrery |
 
-### Развёрнутый план уровней
+### Level 1 — Gloam Academy Rooftops: “Night Rounds”
 
-#### 1. Крыши Академии Глоам — «Ночной обход»
+- **Purpose:** teach movement, auto-attacks, experience pickups, level-up choices and basic telegraphs.
+- **Layout:** several connected roof decks and broad routes around a greenhouse, tower and chimneys. Landmarks remain legible when the screen is busy.
+- **Enemy roster:** Yard Spark (slow single bolts), Bell Warden (brief cone attack), tiny airborne page-familiar (light pressure, clear silhouette).
+- **Hazard:** gust lanes glow and ripple before pushing Mira or drifting selected light projectiles. The player can route around the gust.
+- **Boss:** Copper Gargoylion marks its landing zone, leaps, then sends a ring of projectiles with a wide safe gap. Later it adds three aimed bolts. It must be readable on a narrow portrait viewport.
+- **Reward:** district seal and a familiar-related starting build option.
 
-- **Задача:** показать движение, автоатаку, рывок и базовое чтение пуль.
-- **План:** две крыши соединены мостиком; теплица и башня — визуальные ориентиры и укрытия; центральная площадка оставляет широкий круг обхода.
-- **Враги:** Дворовый Искромёт (одиночные медленные выстрелы), Сторож-Колокол (короткая конусная волна), крошечный летающий фамильяр.
-- **Босс:** Медный Гаргульон прыгает в отмеченную область, затем выпускает кольцо с широким разрывом. Во второй фазе добавляет три направленных снаряда.
-- **Награда:** выбор первой районной печати и постоянное открытие фамильяра как варианта стартового билда.
+### Level 2 — Lantern Ward Night Market: “Too Many Customers”
 
-#### 2. Ночной рынок Лантерн — «Слишком много покупателей»
+- **Purpose:** teach route selection through partial cover and readable overlapping attack zones.
+- **Layout:** three stall rows, a central square/canal and short side alleys with multiple ways around the market.
+- **Enemies:** Market Double (briefly mirrors Mira's recent movement), Courier Beetle (fast but fragile), Hollow Mannequin (slowly occupies a lane).
+- **Hazard:** suspicious lanterns change silhouette/glow before a sector burst. Automatically fired spells can extinguish a lantern when it is a valid target, creating a temporary opening.
+- **Boss:** The Glass Factor creates mirror copies; the real one has a distinct warm shadow. It then uses two crossing fans with a clear central path.
 
-- **Задача:** учить выбирать позицию и пользоваться маршрутами между прилавками.
-- **План:** три параллельных ряда лавок, центральный канал/площадь и короткие боковые проходы. Яркие фонари — интерактивные предупреждения.
-- **Враги:** Торговый Двойник (коротко повторяет последнее движение героя), Жук-Посыльный (быстрый, но хрупкий), Пустой Манекен (медленно перекрывает проход).
-- **Механика:** фонарь меняет цвет за 1,2 секунды до взрыва сектора; игрок может выстрелом отключить один фонарь и создать безопасное окно.
-- **Босс:** Стеклянный Торговец создаёт зеркальную копию, но настоящая всегда имеет тёплую тень; затем выпускает два пересекающихся веера с безопасной центральной дорожкой.
+### Level 3 — The Underline Metro: “Last Train”
 
-#### 3. Метро «Андерлайн» — «Последний поезд»
+- **Purpose:** train reading of linear threats and movement between platforms.
+- **Layout:** two long platforms, track trenches and leyline gates. Keep enough width for one-thumb evasion; do not use camera motion to hide hazards.
+- **Enemies:** Signal Wisp marks a rail, Dust Conductor fires a slow fan, echo-passengers appear with a clear arrival warning.
+- **Hazard:** the ghost train illuminates its complete lane before entering. A platform pocket or alternate leyline crossing provides a route to safety.
+- **Boss:** The Faceless Conductor warns with a luminous rail stripe, attacks along it, and follows with two cross-lines leaving a viable escape window.
 
-- **Задача:** отработать чтение линейных опасностей, переключение маршрутов и движение через контрольные точки.
-- **План:** две платформы и длинные рельсовые секции; тоннельная камера не сужает игровое поле; ворота в конце каждой волны.
-- **Враги:** Сигнальный Висп (ставит метку на рельсах), Пыльный Кондуктор (медленный веер), эхо-пассажиры, появляющиеся с коротким предупреждением.
-- **Механика:** поезд просвечивает весь путь до въезда; герой может встать в карман платформы или сменить сторону на лей-линии.
-- **Босс:** Кондуктор Без Лица телеграфирует рельсовый удар световой полосой, затем оставляет две поперечные линии с единственным понятным окном.
+### Level 4 — Briarwood Perimeter: “The Forest Answers”
 
-#### 4. Опушка Брайарвуда — «Лес отвечает»
+- **Purpose:** contrast urban scenes with open organic routes and temporary terrain changes.
+- **Layout:** an open loop around a moonlit clearing; tree clusters stay near edges so the central combat area remains readable; at least two passages stay open.
+- **Enemies:** Root Snapper (slow lunge), decoy Firefly (diverts attention but does not cause surprise damage), Spore Witch (bounded cloud with visible edge).
+- **Hazard:** roots visibly lift the ground for at least 0.8 seconds before blocking a route. Never seal every exit or trap Mira in a dead end.
+- **Boss:** The Thornhart alternates a marked leap, a root wave and a recovery window; patterns have stable timing and silhouettes.
 
-- **Задача:** создать контраст с городскими уровнями и добавить управление временными препятствиями.
-- **План:** открытое кольцо вокруг поляны; деревья ограничивают обзор только по краям, не в центре. Проходы остаются минимум на двух сторонах.
-- **Враги:** Корневой Щелкун (замедленный рывок), Светляк-приманка (уводит внимание, но не наносит внезапный урон), Споровая Ведьма (облако с видимой границей).
-- **Механика:** корни поднимаются из земли за 0,8 секунды до перекрытия; игрок не должен оказаться заперт в тупике.
-- **Босс:** Терновый Олень чередует скачок, корневую волну и открытую фазу; каждый паттерн имеет устойчивую форму и фиксированную паузу.
+### Level 5 — Starfall Observatory: “Retuning”
 
-#### 5. Обсерватория Старопада — «Перенастройка»
+- **Purpose:** combine established skills in a final encounter without introducing an untelegraphed new control system.
+- **Layout:** circular room, central Orrery, an outer ring route and four small cover points. Keep the player and every entrance/exit visible.
+- **Enemies:** short mixed waves of familiar foes with altered timing; limit simultaneous elite threats.
+- **Hazard:** a safe arc rotates clockwise after a visible warning. Two side runes can briefly interrupt the rotation.
+- **Boss:** The Starfall Orrery has three phases: (1) orbiting projectiles with wide gaps; (2) rotating safe arc plus two warned linear attacks; (3) exposed core after activating side runes. Reward positioning and attack uptime; avoid an opaque DPS check.
+- **Epilogue:** Mira retunes the defense protocol, the districts reopen and the replayable Night Patrol mode unlocks.
 
-- **Задача:** проверить всё освоенное в финальном бою, не добавляя новой непонятной системы.
-- **План:** круглое помещение с центральным узлом, внешней кольцевой дорожкой и четырьмя небольшими укрытиями; вход и выход всегда видны.
-- **Враги:** короткие волны знакомых противников с изменёнными таймингами; не смешивать больше двух элит одновременно.
-- **Механика:** безопасная дуга вращается медленно и предварительно подсвечивается; игрок может коротко остановить её, активировав две боковые руны.
-- **Босс:** Астролябийный Узел: (1) орбитальные снаряды с широкими промежутками; (2) вращающаяся безопасная дуга и две линейные атаки; (3) раскрытие ядра после активации боковых рун. Финальная задача — использовать окно уязвимости, а не пережить бесконечный DPS-check.
-- **Эпилог:** Мира переписывает протокол защиты; жители возвращаются в районы. Короткий финальный кадр открывает «Ночной патруль» с переменными условиями.
+## Visual Direction
 
-## Визуальное направление
+- Original top-down urban-fantasy pixel art / carefully controlled low-resolution art. Compact blocky geometry, deep navy/violet shadow, warm windows, copper details and distinct magical highlights.
+- Evoke the energy of a gritty 1990s city action game viewed from above, but do not reproduce any specific game's maps, HUD, logos, characters, sprites or signature locations.
+- Magical city details should feel practical and lived in: warded streetlamps, copper pipes, enchanted service kiosks, floating spell pages and animated roof gardens.
+- Maintain clean silhouettes and readable movement corridors. Do not let decorative roof geometry imply false collision.
+- Friendly attacks may use turquoise/gold; hostile telegraphs may use amber/coral plus distinct shapes and motion. Validate in a color-vision mode.
+- The five SVG files in `refs/` are authored composition/color/combat-lane references, not final sprites or production-ready maps.
 
-- Вид сверху, геометрия уровня читается на экране телефона; силуэты зданий и препятствий простые и не сливаются с пулями.
-- Основной язык: плотные прямоугольные формы, тёмные синие/фиолетовые тени, тёплые окна и магические акценты, пиксельные кластеры или аккуратный low-res pixel-art.
-- Сеттинг — оригинальная магическая школа в современном городе: латунные трубы, зачарованные фонари, автоматы-обереги, учебные тетради-заклинания.
-- Не копировать конкретные карты, UI, персонажей, логотипы или фирменные объекты известных игр/книг. Референс настроения — городской экшен 90-х с видом сверху, а не воспроизведение чужой игры.
-- Пули игрока: бирюзовый/золотой; вражеские телеграфы: янтарный/коралловый с ясной формой. Проверять читаемость также в режиме дальтонизма.
+## Audio
 
-## Звук и музыка
+- Low-fi electronic night-city music with a shared motif and a distinct timbral layer per district.
+- Short, differentiable spell/enemy sounds; a gentle sound cue accompanies major telegraphs.
+- Separate music, effects and warning volumes; avoid harsh peaks.
 
-- Лоу-фай электронная музыка с ночным городским ритмом; каждому району свой тембр, но единый короткий музыкальный мотив.
-- Звуки заклинаний короткие и различимые; телеграф босса получает мягкий звуковой сигнал, на который можно опираться без необходимости смотреть на вспышку.
-- Без резких максимальных пиков громкости; отдельные ползунки музыка/эффекты/телеграфы.
+## Production Scope and Acceptance
 
-## Вертикальный срез и приоритеты реализации
+The intended deliverable is a complete, playable five-district campaign prototype, not merely a concept or isolated first-level mock-up. Develop in short vertical slices, but continue autonomously through the full scope.
 
-**Первый playable:** один уровень «Крыши Академии», движение, автонаведение, 3 вида врагов, один босс с двумя паттернами, 3 улучшаемых заклинания, локальная пауза, экран поражения/победы и Android-сборка.
+1. Inspect the existing project and environment. Preserve existing user work. Choose a suitable engine and implementation path based on the repository; if none exists, Godot 4 / 2D / GDScript is a reasonable default. Record the decision and any environment limitations in `HANDOFF.md`.
+2. Build and test the one-thumb movement plus automatic combat loop first.
+3. Implement upgrade drafts, experience collection, survival pacing, pause and run restart.
+4. Deliver all five authored districts with their stated signature mechanic and boss, plus a complete win/defeat loop.
+5. Validate portrait layouts, safe areas, one-handed touch reach, performance and save behavior. Build an APK if the environment supports it; otherwise give exact reproducible export steps and accurately record what remains unverified.
+6. Finish with clear launch/build instructions, known issues and an up-to-date `HANDOFF.md`.
 
-**Затем:** добавить систему выбора улучшений и повторного забега; перенести данные врагов/заклинаний в таблицы; реализовать ещё четыре уровня по отдельности; после каждого уровня обновлять этот документ и `HANDOFF.md`.
+**Performance target:** smooth on an agreed representative mid-range Android device; measure and report actual profiling/test results.
 
-**Технические критерии:** стабильные 60 FPS на среднем Android-устройстве как целевой показатель, ограничение числа одновременно активных объектов, object pooling для частиц/пуль, сохранение конфигурации и прогресса локально, тест на нескольких соотношениях сторон.
+## Visual References
 
-## Референсы
-
-- [01 — Крыши Академии Глоам](refs/01_gloam_academy.svg)
-- [02 — Ночной рынок Лантерн](refs/02_lantern_market.svg)
-- [03 — Метро «Андерлайн»](refs/03_underline_metro.svg)
-- [04 — Опушка Брайарвуда](refs/04_briarwood.svg)
-- [05 — Обсерватория Старопада](refs/05_starfall_observatory.svg)
-
-Это авторские схематичные концепт-карты в SVG: они задают силуэт, цветовую зону и читаемые боевые маршруты; это не финальные спрайты и не production art.
+- [01 — Gloam Academy Rooftops](refs/01_gloam_academy.svg)
+- [02 — Lantern Ward Night Market](refs/02_lantern_market.svg)
+- [03 — The Underline Metro](refs/03_underline_metro.svg)
+- [04 — Briarwood Perimeter](refs/04_briarwood.svg)
+- [05 — Starfall Observatory](refs/05_starfall_observatory.svg)

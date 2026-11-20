@@ -1,0 +1,73 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "refs/**"
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.3"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Import and headless smoke test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Import project
+        run: godot --headless --path . --import 2>&1 | tee import.log
+      - name: Smoke test (bot plays all five chapters)
+        run: godot --headless --path . -s res://tests/smoke_test.gd 2>&1 | tee smoke.log
+      - name: Fail on script errors
+        run: |
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script" import.log smoke.log; then
+            echo "::error::GDScript errors found"
+            exit 1
+          fi
+          if grep -F "[smoke] FAIL" smoke.log; then
+            exit 1
+          fi
+          grep -F "[smoke] PASS" smoke.log
+          echo "Engine ERROR lines (informational): $(grep -c 'ERROR:' smoke.log || true)"
+
+  android:
+    name: Android debug APK
+    needs: test
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up export templates and editor settings
+        run: |
+          if [ "$HOME" != "/root" ]; then
+            mkdir -p ~/.local/share/godot/export_templates ~/.config
+            cp -r /root/.config/godot ~/.config/godot
+            cp -r /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          fi
+      - name: Export debug APK
+        run: |
+          mkdir -p build/android
+          godot --headless --verbose --path . --export-debug "Android Debug" build/android/hex-district-debug.apk 2>&1 | tee export.log
+          test -s build/android/hex-district-debug.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: hex-district-debug-apk
+          path: build/android/hex-district-debug.apk

@@ -59,7 +59,24 @@ Enemy sheet currently outlines: Aragog/giant spider, Dementor, Death Eater, anim
 - Current Android game implementation, SVG engine import, game/Android build and device behavior have not been tested.
 - Two automated upload scripts completed all content updates but returned exit code 1 during cleanup because a temporary Windows path did not exist. The actual uploads completed; remote directory checks confirmed the files are present.
 
+## Android Release Signing — Required for Future Updates
+
+- The current `.github/workflows/build.yml` exports a debug APK using a CI debug keystore; it is for testing and is not a stable release identity.
+- A distributable update must keep the same Android `applicationId` and be signed with the same persistent release certificate as the installed version; increase `versionCode` on every release.
+- Do not generate a replacement release key casually. Losing the original keystore or changing signing identity normally prevents in-place install updates; users may need to uninstall and can lose local save data.
+- Read `ANDROID_SIGNING.md` for the four repository Actions secrets: `HOMEMENU_KEYSTORE_BASE64`, `HOMEMENU_KEYSTORE_PASSWORD`, `HOMEMENU_KEY_ALIAS`, and `HOMEMENU_KEY_PASSWORD`.
+- Do not request or place secret values in chat, source code, docs, `export_presets.cfg`, or repository files. Users must configure them under GitHub repository Settings → Secrets and variables → Actions.
+- A production release-signing workflow is **not yet configured or tested**. The next coding agent must preserve the existing debug CI workflow, add a separate release signing path using those secrets, verify the signature and perform a same-key upgrade test, then record actual results here.
+
 ## Current Session Log
+
+### 2026-11-21 — signing and update documentation
+
+- Added `ANDROID_SIGNING.md` with Android update compatibility requirements, exact Actions secret names, secure handling guidance and CI release workflow requirements.
+- Updated README and autonomous agent prompt to distinguish debug APKs from signed release builds and preserve signing identity.
+- Added keystore/certificate and environment secret patterns to `.gitignore`.
+- No secret values were provided or stored. The release workflow, keystore availability and signing/update test have not been verified.
+- Next: configure the four GitHub Actions repository secrets without sharing values in chat, then implement and verify a release-signed APK workflow while retaining debug CI.
 
 ### 2026-11-21 — fan-game visual direction revision
 

@@ -70,16 +70,6 @@ Implement the five campaign chapters and their bosses as in `CONCEPT.md`: Diagon
 ## Android Release Signing and Update Compatibility
 
 - A release APK/AAB must be signed with a persistent private release keystore. The repository's current CI debug APK and debug keystore are for testing only and must never be presented as the production update key.
-- Keep the Android package/application ID exactly stable across releases (`com.vano3667.hexdistrict` unless the project configuration has deliberately changed it before any public release). Increment Android `version/code` (`versionCode`) for every published update.
-- Every update intended to install over an existing build must use the same signing certificate as the installed app. Preserve and back up the original keystore and credentials offline. If that keystore is lost or replaced by a different signing certificate, Android will reject an in-place update; users may have to uninstall first, which can remove local data.
-- Read `ANDROID_SIGNING.md`. Configure the required GitHub Actions **repository secrets**: `HOMEMENU_KEYSTORE_BASE64`, `HOMEMENU_KEYSTORE_PASSWORD`, `HOMEMENU_KEY_ALIAS`, and `HOMEMENU_KEY_PASSWORD`. These names are retained exactly as supplied.
-- Never ask the user to paste credentials into chat or commit secrets, the keystore, decoded key material, generated signing files, or password values. Inject secrets only through GitHub Actions' secret store; decode the Base64 keystore to a temporary runner path, restrict access, avoid echoing/logging it, and remove the temporary file after use.
-- Add or maintain a release export preset/workflow that signs release outputs using those secrets. Keep debug and release artifacts clearly distinguished. If any required secret is unavailable, do not make an unsigned/debug-signed file look like a release; continue other work and report that release signing is not configured without asking the user.
-- Before claiming an upgrade is safe, verify package ID, signing identity and increasing `versionCode`; do not uninstall the prior app during an update test unless data-loss behavior is explicitly part of a separate clean-install test.
-
-## Android Release Signing and Update Compatibility
-
-- A release APK/AAB must be signed with a persistent private release keystore. The repository's current CI debug APK and debug keystore are for testing only and must never be presented as the production update key.
 - Keep the Android package/application ID exactly stable (`com.vano3667.hexdistrict` in the current export preset unless deliberately changed before a public release). Increment Android `version/code` (`versionCode`) for every published update.
 - Every update intended to install over an existing build must use the same signing certificate as the installed app. Preserve and back up the original keystore and credentials offline. If the keystore is lost or replaced by a different signing certificate, Android will reject an in-place update; users may have to uninstall first, which can remove local data.
 - Read `ANDROID_SIGNING.md`. Configure/use the required GitHub Actions **repository secrets**: `HOMEMENU_KEYSTORE_BASE64`, `HOMEMENU_KEYSTORE_PASSWORD`, `HOMEMENU_KEY_ALIAS`, and `HOMEMENU_KEY_PASSWORD`. Names are retained exactly as supplied.

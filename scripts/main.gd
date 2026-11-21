@@ -7,8 +7,8 @@ const StickScript = preload("res://scripts/ui/joystick.gd")
 const SaveScript = preload("res://scripts/core/save.gd")
 const SfxScript = preload("res://scripts/core/sfx.gd")
 const MusicScript = preload("res://scripts/core/music.gd")
-const I18n = preload("res://scripts/core/i18n.gd")
 const Sprites = preload("res://scripts/core/sprites.gd")
+const I18n = preload("res://scripts/core/i18n.gd")
 const Chapters = preload("res://scripts/data/chapters.gd")
 
 var save
@@ -17,9 +17,6 @@ var music
 var world
 var hud
 var stick
-# First-run tutorial: index of the next tip (-1 = off) and the time until it shows.
-var _tip := -1
-var _tip_t := 0.0
 
 
 func _ready() -> void:
@@ -60,11 +57,11 @@ func _ready() -> void:
     hud.menu_requested.connect(_on_menu)
 
     _apply_settings()
-    music.play("menu")
     hud.show_menu()
+    music.play("menu")
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
     # One thumb on the stick is the whole control scheme; the keyboard is only a desktop test aid.
     var v: Vector2 = stick.vector
     if v == Vector2.ZERO:
@@ -77,17 +74,6 @@ func _process(delta: float) -> void:
             v = v.normalized()
     world.move_input = v
     stick.enabled = world.active
-    if _tip >= 0 and world.active:
-        _tip_t -= delta
-        if _tip_t <= 0.0:
-            _tip += 1
-            if _tip > 4:
-                _tip = -1
-                save.data["tutorial"] = true
-                save.save_data()
-            else:
-                hud.show_banner(I18n.t("tut_%d" % _tip), "")
-                _tip_t = 4.5
 
 
 func _notification(what: int) -> void:
@@ -100,6 +86,7 @@ func _notification(what: int) -> void:
 func _apply_settings() -> void:
     var d: Dictionary = save.data
     I18n.lang = str(d.get("lang", "en"))
+    Sprites.enabled = bool(d.get("sprites", true))
     stick.right_handed = bool(d.get("right_handed", true))
     stick.stick_size = float(d.get("stick_size", 56.0))
     stick.stick_opacity = float(d.get("stick_opacity", 0.5))
@@ -107,10 +94,9 @@ func _apply_settings() -> void:
     stick.queue_redraw()
     sfx.enabled = bool(d.get("sound", true))
     music.enabled = bool(d.get("music", true))
-    Sprites.enabled = bool(d.get("sprites", true))
 
 
-# Moves the galleons and bestiary entries collected in the run into the save.
+# Move the galleons and bestiary entries earned so far into the save.
 func _bank() -> void:
     var d: Dictionary = save.data
     d["gold"] = int(d.get("gold", 0)) + int(world.take_gold())
@@ -122,31 +108,25 @@ func _bank() -> void:
 
 func _announce() -> void:
     var id: String = str(world.chapter.id)
-    var duel: bool = world.chapter.get("duel", false)
-    music.play("boss" if duel else "battle")
     hud.show_banner(I18n.t("ch_" + id), I18n.t("cs_" + id))
+    music.play("battle")
 
 
-# kind: "story" (new run), "resume" (from the checkpoint) or "endless".
+# kind: "resume" (story checkpoint), "story" (new story run) or "endless".
 func _on_start(kind: String) -> void:
     hud.close_panel()
     stick.reset()
-    var d: Dictionary = save.data
-    var cp: Dictionary = d.get("checkpoint", {})
+    var cp: Dictionary = save.data.get("checkpoint", {})
     if kind == "resume" and not cp.is_empty():
-        world.start_run(d, cp, "story")
+        world.start_run(save.data, cp)
     elif kind == "endless":
-        world.start_run(d, {}, "endless")
-        d["runs"] = int(d["runs"]) + 1
+        world.start_run(save.data, {}, "endless")
+        save.data["runs"] = int(save.data["runs"]) + 1
     else:
-        d["checkpoint"] = {}
-        world.start_run(d, {}, "story")
-        d["runs"] = int(d["runs"]) + 1
+        save.data["checkpoint"] = {}
+        world.start_run(save.data)
+        save.data["runs"] = int(save.data["runs"]) + 1
     save.save_data()
-    _tip = -1
-    if not bool(d.get("tutorial", false)):
-        _tip = 0
-        _tip_t = 3.5
     _announce()
 
 
@@ -164,6 +144,7 @@ func _on_upgrade(choice: Dictionary) -> void:
 func _on_chapter_cleared(index: int) -> void:
     stick.reset()
     _bank()
+    save.data["tutorial"] = true
     save.data["best_chapter"] = maxi(int(save.data["best_chapter"]), index + 1)
     save.data["checkpoint"] = world.checkpoint(index + 1)
     save.save_data()
@@ -176,7 +157,7 @@ func _on_continue() -> void:
     _announce()
 
 
-# Endless mode rolled over to the next chapter.
+# Endless mode moved on to the next arena by itself.
 func _on_stage(tier: int) -> void:
     _bank()
     save.data["best_endless"] = maxi(int(save.data["best_endless"]), tier)
@@ -188,6 +169,7 @@ func _on_run_ended(victory: bool) -> void:
     stick.reset()
     _bank()
     var d: Dictionary = save.data
+    d["tutorial"] = true
     d["best_kills"] = maxi(int(d["best_kills"]), int(world.kills))
     if str(world.mode) == "endless":
         d["best_endless"] = maxi(int(d["best_endless"]), int(world.tier))
@@ -199,8 +181,8 @@ func _on_run_ended(victory: bool) -> void:
         else:
             d["best_chapter"] = maxi(int(d["best_chapter"]), int(world.chapter_index))
     save.save_data()
-    music.play("menu")
     hud.show_summary(victory)
+    music.play("menu")
 
 
 func _on_pause() -> void:
@@ -222,14 +204,14 @@ func _on_menu() -> void:
         save.save_data()
     world.active = false
     world.in_run = false
-    music.play("menu")
     hud.show_menu()
+    music.play("menu")
 
 
 func _on_boss(boss_key: String) -> void:
     hud.show_banner(I18n.t("bo_" + boss_key), I18n.t("ui_boss_sub"))
-    music.play("boss")
     sfx.play("warn")
+    music.play("boss")
 
 
 func _on_hurt(_amount: float) -> void:

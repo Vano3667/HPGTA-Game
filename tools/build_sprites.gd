@@ -1,85 +1,124 @@
 extends SceneTree
-## Build step: cuts the master art in assets/visual-kit into small runtime textures in art/gen/
-## (ignored by git, rebuilt in CI before every import). The masters are never modified.
-## Usage: godot --headless --path . -s res://tools/build_sprites.gd
-##
-## Output, as scripts/core/sprites.gd expects it:
-##   hero_<id>.png   4 columns (down, left, right, up) x 2 rows (idle, step)
-##   mob_<spr>.png   one frame per enemy sprite
-##   boss_<spr>.png  one frame per story boss
-##   map_<name>.png  painted arena floor
-## Anything that cannot be sliced safely is skipped with a warning; the game then draws it in code.
+## Slices the master art in assets/visual-kit into small runtime sheets under res://art/gen/.
+## Run it before importing the project (CI does this on every build):
+##   godot --headless --path . -s res://tools/build_sprites.gd
+## Masters are never modified. A sheet is skipped - and the game draws that actor in code - when
+## the master has no usable transparency or does not split into the expected cells.
+## Layout facts below were measured with tools/asset_probe.gd.
 
 const SRC := "res://assets/visual-kit/"
 const OUT := "res://art/gen/"
-const CELL := 256
+const HERO_CELL := 144
+const MOB_CELL := 128
+const BOSS_CELL := 288
 
+# "cols": which source column holds each runtime direction [down, left, right, up].
+# "back_fix": a corrected back-facing pose that replaces the sheet's own back frames when usable.
 const HEROES := {
-    "harry": "hero-wizard-pseudo3d-atlas.png",
-    "hermione": "hermione-pseudo3d-8pose-atlas.png",
-    "ron": "ron-pseudo3d-8pose-atlas.png",
+    "harry": {"file": "hero-wizard-pseudo3d-atlas.png", "cols": [0, 3, 1, 2], "back_fix": "hero-wizard-forward-wand-standing.png"},
+    "hermione": {"file": "hermione-pseudo3d-8pose-atlas.png", "cols": [2, 3, 1, 0]},
+    "ron": {"file": "ron-pseudo3d-8pose-atlas.png", "cols": [2, 3, 1, 0]},
 }
-# Sprite names in reading order, as listed in assets/visual-kit/VISUAL_BIBLE.md.
+const BOSSES := {
+    "quirrell": "boss-01-quirrell-dual-face.png", "basilisk": "boss-02-cockatrice-basilisk.png",
+    "dementor": "boss-03-dementor.png", "nagini": "boss-04-nagini.png", "voldemort": "boss-05-voldemort.png",
+}
+# Enemy boards: 5 columns x 2 rows, read left to right, top to bottom.
 const MOBS := {
     "enemies-core-pseudo3d-atlas.png": ["cauldron", "sprite", "mimic", "caster", "armor", "book", "portrait", "spider", "wraith", "plant"],
     "enemies-expansion-pseudo3d-atlas.png": ["centaur", "ball", "drowned", "automaton", "serpent", "frostwitch", "carriage", "gargoyle", "guard", "owl"],
 }
-# Story bosses: [single pose, 8-pose atlas].
-const BOSSES := {
-    "quirrell": ["boss-01-quirrell-dual-face.png", "boss-01-quirrell-8pose-atlas.png"],
-    "basilisk": ["boss-02-cockatrice-basilisk.png", "boss-02-cockatrice-basilisk-8pose-atlas.png"],
-    "dementor": ["boss-03-dementor.png", "boss-03-dementor-8pose-atlas.png"],
-    "nagini": ["boss-04-nagini.png", "boss-04-nagini-8pose-atlas.png"],
-    "voldemort": ["boss-05-voldemort.png", "boss-05-voldemort-8pose-atlas.png"],
-}
-const MAPS := [
-    "01-diagon-alley", "02-academy-courtyard", "03-forbidden-forest", "04-storm-pitch", "05-mysteries-archive",
-    "06-frost-village", "07-serpent-vault", "08-midnight-crossroads", "09-storm-prison", "10-astronomy-tower",
-    "boss-01-mirror-chamber", "boss-02-underground-dungeon", "boss-03-lakeside-forest-clearing",
-    "boss-04-ruined-classroom", "boss-05-broken-bridge",
-]
 
-var made := 0
-var skipped := 0
+var _wrote := 0
 
 
 func _init() -> void:
-    DirAccess.make_dir_recursive_absolute(_abs(OUT))
+    DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
     for id in HEROES:
-        _hero(str(id), str(HEROES[id]))
+        _hero(str(id), HEROES[id])
+    for id in BOSSES:
+        _single("boss_" + str(id), str(BOSSES[id]), BOSS_CELL)
     for file in MOBS:
         _mobs(str(file), MOBS[file])
-    for id in BOSSES:
-        _boss(str(id), str(BOSSES[id][0]), str(BOSSES[id][1]))
-    for m in MAPS:
-        _map(str(m))
-    print("[sprites] done: %d written, %d skipped" % [made, skipped])
+    _maps()
+    print("[sprites] done, %d files written" % _wrote)
     quit(0)
 
 
-func _abs(path: String) -> String:
-    return ProjectSettings.globalize_path(path)
+func _save(img: Image, name: String) -> void:
+    if img.save_png(ProjectSettings.globalize_path(OUT + name + ".png")) == OK:
+        _wrote += 1
+        print("[sprites] wrote %s.png %dx%d" % [name, img.get_width(), img.get_height()])
+    else:
+        print("[sprites] could not write %s.png" % name)
 
 
+# Loads a master and makes its transparency clean: faint pixels become fully clear. Masters that
+# have no clear pixels at all but a fully opaque subject on a half-opaque backdrop are keyed.
 func _load(file: String) -> Image:
     var img := Image.new()
-    if img.load(_abs(SRC + "sprites/" + file)) != OK:
-        print("[sprites] WARNING %s: cannot load" % file)
+    if img.load(ProjectSettings.globalize_path(SRC + "sprites/" + file)) != OK:
+        print("[sprites] skip %s: cannot load" % file)
         return null
     img.convert(Image.FORMAT_RGBA8)
-    return img
+    var w: int = img.get_width()
+    var h: int = img.get_height()
+    var data: PackedByteArray = img.get_data()
+    var size: int = data.size()
+    var total: int = w * h
+    var clear: int = 0
+    var solid: int = 0
+    var i: int = 3
+    while i < size:
+        var a: int = data[i]
+        if a <= 40:
+            clear += 1
+        elif a >= 250:
+            solid += 1
+        i += 4
+    var cut: int = 40
+    if clear * 100 < total * 3:
+        if solid * 100 < total * 8 or solid * 100 > total * 75:
+            print("[sprites] skip %s: no usable transparency (clear %d%%, solid %d%%)" % [file, int(clear * 100.0 / total), int(solid * 100.0 / total)])
+            return null
+        cut = 249
+        print("[sprites] %s: no clear pixels, keeping only the fully opaque %d%%" % [file, int(solid * 100.0 / total)])
+    i = 3
+    while i < size:
+        if data[i] <= cut:
+            data[i] = 0
+        elif cut > 40:
+            data[i] = 255
+        i += 4
+    var out: Image = Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, data)
+    out.fix_alpha_edges()
+    return out
 
 
-func _save(img: Image, name: String) -> void:
-    if img.save_png(_abs(OUT + name + ".png")) != OK:
-        print("[sprites] WARNING %s: cannot save" % name)
-        skipped += 1
-        return
-    made += 1
-    print("[sprites] %s.png %dx%d" % [name, img.get_width(), img.get_height()])
+# Opaque pixels per row / per column inside a rectangle.
+func _rows(data: PackedByteArray, w: int, r: Rect2i) -> PackedInt32Array:
+    var out := PackedInt32Array()
+    out.resize(r.size.y)
+    for y in r.size.y:
+        var o: int = ((r.position.y + y) * w + r.position.x) * 4 + 3
+        var c: int = 0
+        for x in r.size.x:
+            if data[o + x * 4] > 0:
+                c += 1
+        out[y] = c
+    return out
 
 
-# ---------------------------------------------------------------- cell detection
+func _cols(data: PackedByteArray, w: int, r: Rect2i) -> PackedInt32Array:
+    var out := PackedInt32Array()
+    out.resize(r.size.x)
+    for y in r.size.y:
+        var o: int = ((r.position.y + y) * w + r.position.x) * 4 + 3
+        for x in r.size.x:
+            if data[o + x * 4] > 0:
+                out[x] += 1
+    return out
+
 
 # Runs of rows/columns that contain opaque pixels: [[start, end], ...].
 func _runs(counts: PackedInt32Array, span: int) -> Array:
@@ -104,264 +143,149 @@ func _runs(counts: PackedInt32Array, span: int) -> Array:
     return out
 
 
-# Sprite cells of an atlas: one Array of Rect2i per row of sprites.
-func _grid(img: Image) -> Array:
+# The smallest rectangle inside r that still holds every opaque pixel (ignoring single specks).
+func _tight(data: PackedByteArray, w: int, r: Rect2i) -> Rect2i:
+    var rc: PackedInt32Array = _rows(data, w, r)
+    var cc: PackedInt32Array = _cols(data, w, r)
+    var y0: int = 0
+    var y1: int = rc.size() - 1
+    var x0: int = 0
+    var x1: int = cc.size() - 1
+    while y0 < y1 and rc[y0] <= 1:
+        y0 += 1
+    while y1 > y0 and rc[y1] <= 1:
+        y1 -= 1
+    while x0 < x1 and cc[x0] <= 1:
+        x0 += 1
+    while x1 > x0 and cc[x1] <= 1:
+        x1 -= 1
+    return Rect2i(r.position.x + x0, r.position.y + y0, x1 - x0 + 1, y1 - y0 + 1)
+
+
+# Finds the cells of a rows x cols board from its transparency. Returns [] when it does not fit.
+func _grid(img: Image, rows: int, cols: int, file: String) -> Array:
     var w: int = img.get_width()
     var h: int = img.get_height()
     var data: PackedByteArray = img.get_data()
-    var rows := PackedInt32Array()
-    rows.resize(h)
-    for y in h:
-        var o: int = y * w * 4 + 3
-        var c: int = 0
-        for x in w:
-            if data[o + x * 4] > 40:
-                c += 1
-        rows[y] = c
+    var rc: PackedInt32Array = _rows(data, w, Rect2i(0, 0, w, h))
+    var bands: Array = _runs(rc, w)
+    if bands.size() == 1 and rows == 2:
+        # The two rows touch: cut at the emptiest line near the middle.
+        var b: Array = bands[0]
+        var mid: int = int((int(b[0]) + int(b[1])) * 0.5)
+        var span: int = int((int(b[1]) - int(b[0])) / 6.0)
+        var best: int = mid
+        for y in range(mid - span, mid + span):
+            if rc[y] < rc[best]:
+                best = y
+        bands = [[b[0], best - 1], [best, b[1]]]
+    if bands.size() != rows:
+        print("[sprites] skip %s: expected %d rows, found %d" % [file, rows, bands.size()])
+        return []
     var out: Array = []
-    for band in _runs(rows, w):
-        var y0: int = band[0]
-        var y1: int = band[1]
-        var cols := PackedInt32Array()
-        cols.resize(w)
-        for y in range(y0, y1 + 1):
-            var o2: int = y * w * 4 + 3
-            for x in w:
-                if data[o2 + x * 4] > 40:
-                    cols[x] += 1
-        var row: Array = []
-        for cell in _runs(cols, y1 - y0 + 1):
-            row.append(Rect2i(int(cell[0]), y0, int(cell[1]) - int(cell[0]) + 1, y1 - y0 + 1))
-        out.append(row)
+    var ref: Array = []
+    for bi in rows:
+        var y0: int = bands[bi][0]
+        var y1: int = bands[bi][1]
+        var band := Rect2i(0, y0, w, y1 - y0 + 1)
+        var cells: Array = _runs(_cols(data, w, band), band.size.y)
+        if cells.size() != cols:
+            if ref.size() != cols:
+                print("[sprites] skip %s: row %d has %d cells, expected %d" % [file, bi, cells.size(), cols])
+                return []
+            cells = ref
+        elif ref.is_empty():
+            ref = cells
+        for c in cells:
+            out.append(_tight(data, w, Rect2i(int(c[0]), y0, int(c[1]) - int(c[0]) + 1, band.size.y)))
     return out
 
 
-func _shape(grid: Array) -> String:
-    var parts := PackedStringArray()
-    for row in grid:
-        parts.append(str(row.size()))
-    return "rows of [" + ", ".join(parts) + "]"
+# One runtime cell: the cropped pose scaled by "scale" (or less, to fit), feet at the bottom centre.
+func _frame(img: Image, r: Rect2i, cw: int, ch: int, scale: float) -> Image:
+    var sub: Image = img.get_region(r)
+    var k: float = minf(scale, minf((cw - 4.0) / r.size.x, (ch - 6.0) / r.size.y))
+    var nw: int = maxi(1, int(r.size.x * k))
+    var nh: int = maxi(1, int(r.size.y * k))
+    sub.resize(nw, nh, Image.INTERPOLATE_LANCZOS)
+    var cell: Image = Image.create(cw, ch, false, Image.FORMAT_RGBA8)
+    cell.blit_rect(sub, Rect2i(0, 0, nw, nh), Vector2i(int((cw - nw) * 0.5), ch - 3 - nh))
+    return cell
 
 
-func _clear_pct(img: Image) -> float:
-    var data: PackedByteArray = img.get_data()
-    var clear: int = 0
-    for i in range(3, data.size(), 4):
-        if data[i] <= 40:
-            clear += 1
-    return 100.0 * clear / float(img.get_width() * img.get_height())
-
-
-func _skin(c: Color) -> bool:
-    return c.r > 0.62 and c.g > 0.42 and c.b > 0.28 and c.r > c.g * 1.08 and c.g > c.b * 1.05 and c.b > c.r * 0.45
-
-
-# x = share of skin-coloured pixels in the top 40% of a cell (percent),
-# y = where they sit relative to the silhouette (-1 left .. 1 right).
-func _face(img: Image, rect: Rect2i) -> Vector2:
-    var cw: float = float(rect.size.x)
-    var ch: float = float(rect.size.y)
-    var op: int = 0
-    var skin: int = 0
-    var sx: float = 0.0
-    var ox: float = 0.0
-    for gy in 20:
-        for gx in 40:
-            var c: Color = img.get_pixel(rect.position.x + int(cw * (gx + 0.5) / 40.0), rect.position.y + int(ch * 0.4 * (gy + 0.5) / 20.0))
-            if c.a < 0.3:
-                continue
-            op += 1
-            ox += gx
-            if _skin(c):
-                skin += 1
-                sx += gx
-    if op == 0 or skin == 0:
-        return Vector2.ZERO
-    return Vector2(100.0 * skin / float(op), (sx / float(skin) - ox / float(op)) / 20.0)
-
-
-# Which of the four cells of a row faces where. Returns cell indices for [down, left, right, up]:
-# side views show the face off-centre, the front view shows the most skin, the back view the least.
-func _directions(img: Image, cells: Array) -> Array:
-    var skin := PackedFloat32Array()
-    var score := PackedFloat32Array()
-    for item in cells:
-        var rect: Rect2i = item
-        var st: Vector2 = _face(img, rect)
-        skin.append(st.x)
-        score.append(st.x * st.y)
-    var right: int = 0
-    var left: int = 0
-    for i in 4:
-        if score[i] > score[right]:
-            right = i
-        if score[i] < score[left]:
-            left = i
-    if right == left:
-        # No readable faces: assume the documented order (down, right, up, left).
-        return [0, 3, 1, 2]
-    var rest: Array = []
-    for i in 4:
-        if i != right and i != left:
-            rest.append(i)
-    var down: int = rest[0]
-    var up: int = rest[1]
-    if skin[up] > skin[down]:
-        down = rest[1]
-        up = rest[0]
-    return [down, left, right, up]
-
-
-# Horizontal centre of the feet (lowest 12% of the visible pixels) of a cell image.
-func _feet_x(part: Image) -> float:
-    var used: Rect2i = part.get_used_rect()
-    if used.size.x <= 0 or used.size.y <= 0:
-        return part.get_width() * 0.5
-    var y0: int = used.end.y - maxi(2, int(used.size.y * 0.12))
-    var sum: float = 0.0
-    var n: int = 0
-    for y in range(y0, used.end.y, 2):
-        for x in range(used.position.x, used.end.x, 2):
-            if part.get_pixel(x, y).a > 0.3:
-                sum += x
-                n += 1
-    if n == 0:
-        return used.position.x + used.size.x * 0.5
-    return sum / float(n)
-
-
-# ---------------------------------------------------------------- heroes
-
-func _hero(id: String, file: String) -> void:
+func _hero(id: String, cfg: Dictionary) -> void:
+    var file: String = cfg.file
     var img: Image = _load(file)
     if img == null:
-        skipped += 1
         return
-    var grid: Array = _grid(img)
-    if grid.size() != 2 or grid[0].size() != 4 or grid[1].size() != 4:
-        print("[sprites] WARNING hero %s: expected 2 rows of 4 poses, found %s - skipped" % [id, _shape(grid)])
-        skipped += 1
+    var cells: Array = _grid(img, 2, 4, file)
+    if cells.size() != 8:
         return
-    var sheet: Image = Image.create(CELL * 4, CELL * 2, false, Image.FORMAT_RGBA8)
-    for r in 2:
-        var cells: Array = grid[r]
-        var order: Array = _directions(img, cells)
-        print("[sprites] hero %s row %d: down=c%d left=c%d right=c%d up=c%d" % [id, r, int(order[0]), int(order[1]), int(order[2]), int(order[3])])
-        for c in 4:
-            var rect: Rect2i = cells[int(order[c])]
-            _place(sheet, img.get_region(rect), Vector2i(c * CELL, r * CELL), true)
-    if id == "harry":
-        _fix_back(sheet)
+    var tallest: int = 1
+    for item in cells:
+        var r: Rect2i = item
+        tallest = maxi(tallest, r.size.y)
+    var scale: float = (HERO_CELL - 6.0) / tallest
+    var cell_rect := Rect2i(0, 0, HERO_CELL, HERO_CELL)
+    var sheet: Image = Image.create(HERO_CELL * 4, HERO_CELL * 2, false, Image.FORMAT_RGBA8)
+    var order: Array = cfg.cols
+    for row in 2:
+        for d in 4:
+            var src: Rect2i = cells[row * 4 + int(order[d])]
+            sheet.blit_rect(_frame(img, src, HERO_CELL, HERO_CELL, scale), cell_rect, Vector2i(d * HERO_CELL, row * HERO_CELL))
+    if cfg.has("back_fix"):
+        var fix_file: String = cfg.back_fix
+        var fix: Image = _load(fix_file)
+        if fix != null:
+            var fw: int = fix.get_width()
+            var fh: int = fix.get_height()
+            var fr: Rect2i = _tight(fix.get_data(), fw, Rect2i(0, 0, fw, fh))
+            var aspect: float = fr.size.y / float(maxi(1, fr.size.x))
+            var inside: bool = fr.position.x > 2 and fr.position.y > 2 and fr.end.x < fw - 2 and fr.end.y < fh - 2
+            if inside and aspect > 1.3 and aspect < 3.4 and fr.size.y > fh * 0.3:
+                var back: Rect2i = cells[int(order[3])]
+                var pose: Image = _frame(fix, fr, HERO_CELL, HERO_CELL, back.size.y * scale / fr.size.y)
+                for row in 2:
+                    sheet.blit_rect(pose, cell_rect, Vector2i(3 * HERO_CELL, row * HERO_CELL))
+                print("[sprites] hero_%s: back-facing frames replaced with %s (pose %dx%d)" % [id, fix_file, fr.size.x, fr.size.y])
+            else:
+                print("[sprites] hero_%s: %s does not isolate cleanly (box %s), keeping the sheet's own back pose" % [id, fix_file, str(fr)])
     _save(sheet, "hero_" + id)
 
 
-# Scales a pose to the cell height and stands it on the bottom centre of its cell.
-func _place(sheet: Image, part: Image, at: Vector2i, by_feet: bool) -> void:
-    var k: float = (CELL - 8.0) / float(part.get_height())
-    var w: int = maxi(1, int(part.get_width() * k))
-    var h: int = maxi(1, int(part.get_height() * k))
-    var anchor: float = part.get_width() * 0.5
-    if by_feet:
-        anchor = _feet_x(part)
-    part.resize(w, h, Image.INTERPOLATE_LANCZOS)
-    var x: int = clampi(int(CELL * 0.5 - anchor * k), 0, maxi(0, CELL - w))
-    sheet.blit_rect(part, Rect2i(0, 0, mini(w, CELL), h), at + Vector2i(x, CELL - 4 - h))
-
-
-# In the atlas the back view holds the wand towards the camera. The corrected standing pose
-# (hero-wizard-forward-wand-standing.png) replaces the idle back view when its background can be removed.
-func _fix_back(sheet: Image) -> void:
-    var file: String = "hero-wizard-forward-wand-standing.png"
+func _single(name: String, file: String, cell: int) -> void:
     var img: Image = _load(file)
     if img == null:
         return
     var w: int = img.get_width()
-    var h: int = img.get_height()
-    var data: PackedByteArray = img.get_data()
-    var solid: int = 0
-    for i in range(3, data.size(), 4):
-        if data[i] > 215:
-            solid += 1
-    var pct: float = 100.0 * solid / float(w * h)
-    if pct < 4.0 or pct > 60.0:
-        print("[sprites] WARNING back pose NOT fixed: %s has no removable background (%.1f%% of its pixels are solid)" % [file, pct])
-        return
-    for i in range(3, data.size(), 4):
-        if data[i] <= 215:
-            data[i] = 0
-    var keyed: Image = Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, data)
-    var used: Rect2i = keyed.get_used_rect()
-    var ratio: float = used.size.x / float(maxi(1, used.size.y))
-    if used.size.y < h * 0.3 or ratio < 0.2 or ratio > 0.85:
-        print("[sprites] WARNING back pose NOT fixed: %s does not key to a standing figure (box %dx%d)" % [file, used.size.x, used.size.y])
-        return
-    sheet.fill_rect(Rect2i(3 * CELL, 0, CELL, CELL), Color(0.0, 0.0, 0.0, 0.0))
-    _place(sheet, keyed.get_region(used), Vector2i(3 * CELL, 0), false)
-    print("[sprites] back pose fixed: idle back view of Harry taken from %s (%.1f%% solid, box %dx%d)" % [file, pct, used.size.x, used.size.y])
-
-
-# ---------------------------------------------------------------- enemies and bosses
-
-func _single(img: Image, rect: Rect2i, name: String, height: int) -> void:
-    var part: Image = img.get_region(rect)
-    var used: Rect2i = part.get_used_rect()
-    if used.size.x < 4 or used.size.y < 4:
-        print("[sprites] WARNING %s: empty cell - skipped" % name)
-        skipped += 1
-        return
-    part = part.get_region(used)
-    var k: float = minf(1.0, height / float(used.size.y))
-    part.resize(maxi(1, int(used.size.x * k)), maxi(1, int(used.size.y * k)), Image.INTERPOLATE_LANCZOS)
-    _save(part, name)
+    var r: Rect2i = _tight(img.get_data(), w, Rect2i(0, 0, w, img.get_height()))
+    _save(_frame(img, r, cell, cell, 999.0), name)
 
 
 func _mobs(file: String, names: Array) -> void:
     var img: Image = _load(file)
     if img == null:
-        skipped += names.size()
         return
-    var grid: Array = _grid(img)
-    var cells: Array = []
-    for row in grid:
-        cells.append_array(row)
+    var cells: Array = _grid(img, 2, 5, file)
     if cells.size() != names.size():
-        print("[sprites] WARNING %s: expected %d sprites, found %s - skipped" % [file, names.size(), _shape(grid)])
-        skipped += names.size()
         return
     for i in names.size():
-        var rect: Rect2i = cells[i]
-        _single(img, rect, "mob_" + str(names[i]), 160)
+        var r: Rect2i = cells[i]
+        _save(_frame(img, r, MOB_CELL, MOB_CELL, 999.0), "mob_" + str(names[i]))
 
 
-func _boss(id: String, single: String, atlas: String) -> void:
-    var img: Image = _load(single)
-    if img != null:
-        var pct: float = _clear_pct(img)
-        if pct > 3.0 and pct < 99.0:
-            _single(img, Rect2i(0, 0, img.get_width(), img.get_height()), "boss_" + id, 320)
-            return
-        print("[sprites] boss %s: %s has no transparent background (%.1f%% clear), using the atlas" % [id, single, pct])
-    img = _load(atlas)
-    if img == null:
-        skipped += 1
-        return
-    var grid: Array = _grid(img)
-    if grid.is_empty() or grid[0].is_empty():
-        print("[sprites] WARNING boss %s: no sprite cells found in %s - skipped" % [id, atlas])
-        skipped += 1
-        return
-    var rect: Rect2i = grid[0][0]
-    _single(img, rect, "boss_" + id, 320)
-
-
-# ---------------------------------------------------------------- maps
-
-func _map(name: String) -> void:
-    var src: String = _abs(SRC + "locations/" + name + ".png")
-    var dst: String = _abs(OUT + "map_" + name + ".png")
-    if DirAccess.copy_absolute(src, dst) != OK:
-        print("[sprites] WARNING map %s: cannot copy" % name)
-        skipped += 1
-        return
-    made += 1
-    print("[sprites] map_%s.png" % name)
+# Location paintings become the arena floors as they are (the importer compresses them).
+func _maps() -> void:
+    var base: String = ProjectSettings.globalize_path(SRC + "locations")
+    var files: Array = Array(DirAccess.get_files_at(base))
+    files.sort()
+    for n in files:
+        var file: String = str(n)
+        if not file.ends_with(".png"):
+            continue
+        var img := Image.new()
+        if img.load(base + "/" + file) != OK:
+            print("[sprites] skip map %s: cannot load" % file)
+            continue
+        img.convert(Image.FORMAT_RGB8)
+        _save(img, "map_" + file.get_basename())

@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build runtime sprites from the visual kit
+      - name: Build runtime art from assets/visual-kit
         run: godot --headless --path . -s res://tools/build_sprites.gd 2>&1 | tee sprites.log
       - name: Import project
         run: godot --headless --path . --import 2>&1 | tee import.log
@@ -68,15 +68,14 @@ jobs:
             cp -r /root/.config/godot ~/.config/godot
             cp -r /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           fi
-      - name: Build runtime sprites from the visual kit
+      - name: Build runtime art from assets/visual-kit
         run: godot --headless --path . -s res://tools/build_sprites.gd 2>&1 | grep -F "[sprites]"
-      - name: Import project
-        run: godot --headless --path . --import 2>&1 | tail -n 5
       - name: Export debug APK
         run: |
           mkdir -p build/android
           godot --headless --verbose --path . --export-debug "Android Debug" build/android/hex-district-debug.apk 2>&1 | tee export.log
           test -s build/android/hex-district-debug.apk
+          ls -l build/android/hex-district-debug.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

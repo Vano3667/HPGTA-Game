@@ -2,10 +2,11 @@ extends RefCounted
 ## Pacing: escalating waves, elites, the chapter hazard and boss behaviour.
 
 const Chapters = preload("res://scripts/data/chapters.gd")
+const I18n = preload("res://scripts/core/i18n.gd")
 
 var w
 var spawn_t := 0.5
-var elite_t := 40.0
+var elite_t := 35.0
 var hazard_t := 6.0
 var boss_spawned := false
 var boss_dead := false
@@ -21,7 +22,7 @@ func _init(world) -> void:
 
 func reset() -> void:
     spawn_t = 0.5
-    elite_t = 40.0
+    elite_t = 35.0
     hazard_t = 6.0
     boss_spawned = false
     boss_dead = false
@@ -31,6 +32,11 @@ func reset() -> void:
     _done = false
 
 
+func hp_mult(k: float) -> float:
+    var index: int = w.chapter_index
+    return (1.0 + 0.5 * index) * (1.0 + 0.6 * k)
+
+
 func step(delta: float) -> void:
     var ch: Dictionary = w.chapter
     if boss_dead:
@@ -38,7 +44,7 @@ func step(delta: float) -> void:
         return
     var k: float = clampf(w.time / Chapters.SURVIVE_TIME, 0.0, 1.0)
     var index: int = w.chapter_index
-    var mult: float = (1.0 + 0.7 * index) * (1.0 + 0.6 * k)
+    var mult: float = hp_mult(k)
     spawn_t -= delta
     if spawn_t <= 0.0:
         if boss_spawned:
@@ -47,11 +53,11 @@ func step(delta: float) -> void:
         else:
             # Gentle opening that ramps to a dense swarm by the end of the chapter.
             spawn_t = lerpf(1.5, 0.4, k)
-            _spawn_batch(ch, 1 + int(k * 5.0) + index, mult)
+            _spawn_batch(ch, 1 + int(k * 5.0) + int(index * 0.6), mult)
     if not boss_spawned:
         elite_t -= delta
         if elite_t <= 0.0:
-            elite_t = 40.0
+            elite_t = 35.0
             w.spawn_enemy(_pick(ch), _edge_pos(), true, mult)
         if w.time >= Chapters.SURVIVE_TIME:
             # The boss arrives with a shockwave that dispels the crowd, so the duel stays readable
@@ -76,6 +82,7 @@ func _wipe(drop_xp: bool) -> void:
     for e in w.enemies:
         if e.hp > 0.0 and not e.boss:
             e.hp = 0.0
+            e.dead = true
             w.add_fx({"kind": "ring", "pos": e.pos, "r0": 2.0, "r1": e.r * 2.0, "col": Color("f0d278"), "life": 0.3})
             if drop_xp:
                 w._drop_gem(e.pos, int(e.xp))
@@ -119,9 +126,9 @@ func _pick(ch: Dictionary) -> String:
 func _edge_pos() -> Vector2:
     var pp: Vector2 = w.player.pos
     var a: Vector2 = Chapters.ARENA
-    var vs: Vector2 = w.view_size
+    var vs: Vector2 = w.view_world
     var rng: RandomNumberGenerator = w.rng
-    var half: Vector2 = vs * 0.5 + Vector2(30.0, 30.0)
+    var half: Vector2 = vs * 0.5 + Vector2(40.0, 30.0)
     var pos: Vector2 = pp
     for attempt in 5:
         var side: int = rng.randi() % 4
@@ -141,6 +148,11 @@ func _edge_pos() -> Vector2:
 
 
 # ---------------------------------------------------------------- hazards
+# A hazard is a set of rectangles and circles. It warns first ("warn"), then is live for "life".
+
+func _new_hazard(warn: float, life: float, dmg: float) -> Dictionary:
+    return {"rects": [], "circles": [], "vel": Vector2.ZERO, "warn": warn, "warn_max": warn, "life": life, "dmg": dmg, "slow": false}
+
 
 func _hazards(delta: float, hz: Dictionary) -> void:
     hazard_t -= delta
@@ -154,6 +166,9 @@ func _hazards(delta: float, hz: Dictionary) -> void:
             h.warn -= delta
             if h.warn <= 0.0:
                 w.sound.emit("burst")
+                for c in h.circles:
+                    if not h.slow:
+                        w.burst(c[0], Color("ffb04a"), 10, 120.0)
             keep.append(h)
             continue
         h.life -= delta
@@ -179,9 +194,10 @@ func _inside(h: Dictionary, pos: Vector2, r: float) -> bool:
         var rect: Rect2 = item
         if rect.grow(r * 0.5).has_point(pos):
             return true
-    if h.r > 0.0:
-        var c: Vector2 = h.pos
-        return pos.distance_to(c) < h.r
+    for c in h.circles:
+        var cp: Vector2 = c[0]
+        if pos.distance_to(cp) < c[1]:
+            return true
     return false
 
 
@@ -189,42 +205,56 @@ func _inside(h: Dictionary, pos: Vector2, r: float) -> bool:
 func _make_hazard(hz: Dictionary) -> void:
     var pp: Vector2 = w.player.pos
     var rng: RandomNumberGenerator = w.rng
-    var h: Dictionary = {
-        "rects": [], "pos": Vector2.ZERO, "r": 0.0, "vel": Vector2.ZERO,
-        "warn": float(hz.warn), "warn_max": float(hz.warn), "life": float(hz.life), "dmg": float(hz.damage), "slow": false,
-    }
+    var n: int = int(hz.get("n", 1))
+    var h: Dictionary = _new_hazard(float(hz.warn), float(hz.life), float(hz.damage))
     match hz.kind:
         "lane":
-            # Diagon Alley: a street lamp flashes, then a short burst fills one lane.
+            # A lamp flash / basilisk gaze: one lane through the player's position.
+            var half: float = float(hz.get("w", 44.0)) * 0.5
             if rng.randf() < 0.5:
-                h.rects = [Rect2(pp.x - 320.0, pp.y + rng.randf_range(-70.0, 70.0) - 22.0, 640.0, 44.0)]
+                h.rects = [Rect2(pp.x - 320.0, pp.y + rng.randf_range(-40.0, 40.0) - half, 640.0, half * 2.0)]
             else:
-                h.rects = [Rect2(pp.x + rng.randf_range(-70.0, 70.0) - 22.0, pp.y - 440.0, 44.0, 880.0)]
+                h.rects = [Rect2(pp.x + rng.randf_range(-40.0, 40.0) - half, pp.y - 440.0, half * 2.0, 880.0)]
         "glyph":
-            # Hogwarts: a staircase glyph locks a patch of floor for a few seconds.
-            var off := Vector2(rng.randf_range(-90.0, 90.0), rng.randf_range(-90.0, 90.0))
-            h.rects = [Rect2(pp + off - Vector2(80.0, 50.0), Vector2(160.0, 100.0))]
+            # Floor glyphs lock patches of ground for a few seconds.
+            var rects: Array = []
+            for i in n:
+                var off := Vector2(rng.randf_range(-70.0, 70.0), rng.randf_range(-70.0, 70.0))
+                rects.append(Rect2(pp + off - Vector2(60.0, 40.0), Vector2(120.0, 80.0)))
+            h.rects = rects
         "fog":
-            # Forbidden Forest: roots and fog slow Harry down.
-            h.pos = pp + Vector2(rng.randf_range(-90.0, 90.0), rng.randf_range(-90.0, 90.0))
-            h.r = 95.0
+            # Fog, roots or snowdrifts slow Harry down.
+            var circles: Array = []
+            for i in n:
+                circles.append([pp + Vector2(rng.randf_range(-80.0, 80.0), rng.randf_range(-80.0, 80.0)), float(hz.get("r", 80.0))])
+            h.circles = circles
             h.slow = true
         "sweep":
-            # Quidditch: a flight lane sweeps across the pitch with one readable gap.
-            var from_left: bool = rng.randf() < 0.5
-            var x: float = pp.x - 300.0
-            if not from_left:
-                x = pp.x + 250.0
-            var gap_y: float = pp.y + rng.randf_range(-160.0, 160.0)
-            var top: float = pp.y - 520.0
-            var bottom: float = pp.y + 520.0
-            h.rects = [Rect2(x, top, 50.0, gap_y - 65.0 - top), Rect2(x, gap_y + 65.0, 50.0, bottom - gap_y - 65.0)]
-            h.vel = Vector2(150.0 if from_left else -150.0, 0.0)
-            h["path"] = Rect2(pp.x - 300.0, top, 600.0, 1040.0)
+            # Flight lanes / mine carts sweep across with one readable gap each.
+            var rects2: Array = []
+            for i in n:
+                var from_left: bool = (rng.randf() < 0.5) if i == 0 else (h.vel.x < 0.0)
+                var x: float = pp.x - 260.0
+                if not from_left:
+                    x = pp.x + 216.0
+                var gap_y: float = pp.y + rng.randf_range(-140.0, 140.0)
+                var top: float = pp.y - 480.0
+                var bottom: float = pp.y + 480.0
+                rects2.append(Rect2(x - i * 150.0 * (1.0 if from_left else -1.0), top, 44.0, gap_y - 55.0 - top))
+                rects2.append(Rect2(x - i * 150.0 * (1.0 if from_left else -1.0), gap_y + 55.0, 44.0, bottom - gap_y - 55.0))
+                if i == 0:
+                    h.vel = Vector2(150.0 if from_left else -150.0, 0.0)
+            h.rects = rects2
         "orb":
-            # Ministry: a prophecy orb glows, then bursts in a cross of lines.
-            var c := Vector2(pp.x + rng.randf_range(-60.0, 60.0), pp.y + rng.randf_range(-60.0, 60.0))
-            h.rects = [Rect2(c.x - 300.0, c.y - 17.0, 600.0, 34.0), Rect2(c.x - 17.0, c.y - 300.0, 34.0, 600.0)]
+            # A prophecy orb glows, then bursts in a cross of lines.
+            var c := Vector2(pp.x + rng.randf_range(-50.0, 50.0), pp.y + rng.randf_range(-50.0, 50.0))
+            h.rects = [Rect2(c.x - 300.0, c.y - 15.0, 600.0, 30.0), Rect2(c.x - 15.0, c.y - 300.0, 30.0, 600.0)]
+        "bolts":
+            # Lightning strikes several marked spots at once.
+            var spots: Array = []
+            for i in n:
+                spots.append([pp + Vector2(rng.randf_range(-110.0, 110.0), rng.randf_range(-130.0, 130.0)), float(hz.get("r", 44.0))])
+            h.circles = spots
     w.add_hazard(h)
     w.sound.emit("warn")
 
@@ -248,8 +278,8 @@ func boss_step(e: Dictionary, delta: float) -> void:
             e.state = ""
             e.cd = e.rest
     else:
-        if dist > 110.0:
-            e.pos += dir * e.speed * delta
+        if dist > 96.0:
+            e.pos += dir * e.speed * (0.5 if e.s.has("chill") else 1.0) * delta
         e.cd -= delta
         if e.cd <= 0.0:
             _boss_tell(e, dir, p)
@@ -265,7 +295,7 @@ func _boss_tell(e: Dictionary, dir: Vector2, target: Vector2) -> void:
         phase = 1
     if phase != e.phase:
         e.phase = phase
-        w.add_fx({"kind": "text", "pos": e.pos + Vector2(-24.0, -40.0), "text": "PHASE %d" % (phase + 1), "col": Color("f0d278"), "life": 1.4})
+        w.add_fx({"kind": "text", "pos": e.pos + Vector2(-24.0, -40.0), "text": I18n.t("ui_phase") % (phase + 1), "col": Color("f0d278"), "life": 1.4})
     var pats: Array = e.patterns[phase]
     e.pat = pats[pat_i % pats.size()]
     pat_i += 1
@@ -276,12 +306,30 @@ func _boss_tell(e: Dictionary, dir: Vector2, target: Vector2) -> void:
     e.mark = target
     e.repeat = 0
     w.sound.emit("warn")
+    var tell: float = e.tell
+    var origin: Vector2 = e.pos
     if e.pat == "slam":
-        w.add_hazard({"rects": [], "pos": target, "r": 78.0, "vel": Vector2.ZERO, "warn": float(e.tell), "warn_max": float(e.tell), "life": 0.3, "dmg": e.dmg * 1.4, "slow": false})
+        var h: Dictionary = _new_hazard(tell, 0.3, e.dmg * 1.4)
+        h.circles = [[target, 64.0]]
+        w.add_hazard(h)
     elif e.pat == "web":
+        # Webs / freezing mist: slowing pools around the player.
+        var web: Dictionary = _new_hazard(tell, 5.0, 0.0)
+        var pools: Array = []
         for i in 3:
-            var off: Vector2 = Vector2.from_angle(w.rng.randf() * TAU) * w.rng.randf_range(40.0, 130.0)
-            w.add_hazard({"rects": [], "pos": target + off, "r": 60.0, "vel": Vector2.ZERO, "warn": float(e.tell), "warn_max": float(e.tell), "life": 5.0, "dmg": 0.0, "slow": true})
+            var off: Vector2 = Vector2.from_angle(w.rng.randf() * TAU) * w.rng.randf_range(30.0, 110.0)
+            pools.append([target + off, 52.0])
+        web.circles = pools
+        web.slow = true
+        w.add_hazard(web)
+    elif e.pat == "breath":
+        # Dragon fire: a row of blasts marching from the boss through the player.
+        var fire: Dictionary = _new_hazard(tell, 0.5, e.dmg * 1.2)
+        var row: Array = []
+        for i in 5:
+            row.append([origin + dir * (60.0 + 62.0 * i), 36.0])
+        fire.circles = row
+        w.add_hazard(fire)
 
 
 func _boss_fire(e: Dictionary) -> void:
@@ -307,18 +355,25 @@ func _boss_fire(e: Dictionary) -> void:
         "charge":
             e.state = "dash"
             e.state_t = 0.55
+        "blink":
+            # Apparate to the far side of the player, then answer with a fan.
+            var pp: Vector2 = w.player.pos
+            var away: Vector2 = pp - e.pos
+            w.burst(e.pos, col, 14, 120.0)
+            e.pos = w.push_out(pp + away.normalized() * 110.0, e.r)
+            w.burst(e.pos, col, 14, 120.0)
+            e.cd = 0.5
         "summon":
             var list: Array = w.chapter.enemies
-            var index: int = w.chapter_index
             for i in 6:
                 var type: String = list[i % list.size()][0]
                 var at: Vector2 = e.pos + Vector2.from_angle(TAU * i / 6.0) * (e.r + 26.0)
-                w.spawn_enemy(type, at, false, 1.0 + 0.7 * index)
+                w.spawn_enemy(type, at, false, hp_mult(1.0))
         "core":
             # Final phase of the Hex Disturbance: the seal core is exposed and takes extra damage.
-            e.weak = 4.0
-            e.stun = 2.5
-            w.add_fx({"kind": "text", "pos": e.pos + Vector2(-52.0, -44.0), "text": "SEAL CORE EXPOSED", "col": Color("f0d278"), "life": 1.6})
+            e.s["mark"] = 4.0
+            e.hold = 2.5
+            w.add_fx({"kind": "text", "pos": e.pos + Vector2(-52.0, -44.0), "text": I18n.t("ui_core"), "col": Color("f0d278"), "life": 1.6})
             _ring(e, 20, 5, 80.0, col)
 
 

@@ -6,6 +6,10 @@ on:
     paths-ignore:
       - "refs/**"
       - "**.md"
+  pull_request:
+    paths-ignore:
+      - "refs/**"
+      - "**.md"
   workflow_dispatch:
 
 permissions:
@@ -30,7 +34,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Import project
         run: godot --headless --path . --import 2>&1 | tee import.log
-      - name: Smoke test (bot plays all five chapters)
+      - name: Smoke test (bot plays all ten chapters)
         run: godot --headless --path . -s res://tests/smoke_test.gd 2>&1 | tee smoke.log
       - name: Fail on script errors
         run: |

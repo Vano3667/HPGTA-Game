@@ -5,6 +5,8 @@ extends RefCounted
 const PATH := "user://hex_district.cfg"
 
 var data := {
+    # "" = follow the device language on first launch
+    "lang": "",
     # one-thumb control options
     "right_handed": true,
     "stick_size": 56.0,

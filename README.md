@@ -24,11 +24,13 @@ The `build` GitHub Actions workflow (`.github/workflows/build.yml`) runs on ever
 1. imports the project and runs the headless smoke test (`tests/smoke_test.gd`, a bot plays all five chapters);
 2. exports a debug APK and uploads it as the `hex-district-debug-apk` artifact of the run (Actions tab -> latest `build` run -> Artifacts).
 
-The APK is a debug build signed with the CI debug keystore. Run the smoke test locally with:
+The APK is currently a debug build signed with the CI debug keystore. It is for testing only and is not the release signing identity for users' future app updates. Run the smoke test locally with:
 
 ```
 godot --headless --path . -s res://tests/smoke_test.gd
 ```
+
+For release signing, set up the persistent signing key as GitHub Actions secrets and use the same package name, keystore and key for every update. See [ANDROID_SIGNING.md](ANDROID_SIGNING.md) for the required secret names, safe handling and update rules. Do not commit the keystore or passwords.
 
 ### Code map
 
@@ -51,6 +53,7 @@ See [HANDOFF.md](HANDOFF.md) for the verified status, known limits and next step
 - [CONCEPT.md](CONCEPT.md) — game concept, world, spells, survival loop and five campaign chapters.
 - [PROMPT_FOR_AGENT.md](PROMPT_FOR_AGENT.md) — autonomous implementation prompt; the coding agent is told not to ask the user to make project decisions.
 - [HANDOFF.md](HANDOFF.md) — persistent status, verified work and next implementation action.
+- [ANDROID_SIGNING.md](ANDROID_SIGNING.md) — permanent Android release-signing key, GitHub Actions secrets and in-place update requirements.
 
 ## New Overhead Level Concepts
 

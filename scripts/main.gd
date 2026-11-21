@@ -6,6 +6,8 @@ const HudScript = preload("res://scripts/ui/hud.gd")
 const StickScript = preload("res://scripts/ui/joystick.gd")
 const SaveScript = preload("res://scripts/core/save.gd")
 const SfxScript = preload("res://scripts/core/sfx.gd")
+const I18n = preload("res://scripts/core/i18n.gd")
+const Chapters = preload("res://scripts/data/chapters.gd")
 
 var save
 var sfx
@@ -18,6 +20,10 @@ func _ready() -> void:
     get_tree().quit_on_go_back = false
     save = SaveScript.new()
     save.load_data()
+    # First launch follows the device language; afterwards the saved choice wins.
+    if str(save.data.get("lang", "")) == "":
+        save.data["lang"] = I18n.system_lang()
+    I18n.lang = str(save.data["lang"])
     sfx = SfxScript.new()
     add_child(sfx)
     world = WorldScript.new()
@@ -72,6 +78,7 @@ func _notification(what: int) -> void:
 
 func _apply_settings() -> void:
     var d: Dictionary = save.data
+    I18n.lang = str(d.get("lang", "en"))
     stick.right_handed = bool(d.get("right_handed", true))
     stick.stick_size = float(d.get("stick_size", 56.0))
     stick.stick_opacity = float(d.get("stick_opacity", 0.5))
@@ -81,7 +88,8 @@ func _apply_settings() -> void:
 
 
 func _announce() -> void:
-    hud.show_banner(str(world.chapter.name), str(world.chapter.subtitle))
+    var id: String = str(world.chapter.id)
+    hud.show_banner(I18n.t("ch_" + id), I18n.t("cs_" + id))
 
 
 func _on_start(resume: bool) -> void:
@@ -130,7 +138,7 @@ func _on_run_ended(victory: bool) -> void:
     d["checkpoint"] = {}
     if victory:
         d["wins"] = int(d["wins"]) + 1
-        d["best_chapter"] = 5
+        d["best_chapter"] = Chapters.LIST.size()
     else:
         d["best_chapter"] = maxi(int(d["best_chapter"]), int(world.chapter_index))
     save.save_data()
@@ -156,8 +164,8 @@ func _on_menu() -> void:
     hud.show_menu()
 
 
-func _on_boss(boss_name: String) -> void:
-    hud.show_banner(boss_name, "Watch the amber telegraphs")
+func _on_boss(boss_key: String) -> void:
+    hud.show_banner(I18n.t("bo_" + boss_key), I18n.t("ui_boss_sub"))
     sfx.play("warn")
 
 

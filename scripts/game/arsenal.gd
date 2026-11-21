@@ -1,15 +1,17 @@
 extends RefCounted
-## The automatic arsenal. Every spell picks its own target and fires on its own timer;
-## the player never aims or presses a cast button.
+## The automatic arsenal. Spells are data (spells.gd); this file implements the archetypes:
+## bolt, nova, zone, strike, beam plus the three special ones (orbit, stag, familiar).
+## Every spell picks its own target and fires on its own timer.
 
 const Spells = preload("res://scripts/data/spells.gd")
+const I18n = preload("res://scripts/core/i18n.gd")
 
 var w
 var cd := {}
 var orbit := 0.0
 var orbit_hit := {}
 var familiar := Vector2.ZERO
-var rings: Array = []
+var casts: Array = []
 var stag = null
 
 
@@ -20,7 +22,7 @@ func _init(world) -> void:
 func reset() -> void:
     cd = {}
     orbit_hit = {}
-    rings = []
+    casts = []
     stag = null
     if not w.player.is_empty():
         familiar = w.player.pos
@@ -30,67 +32,172 @@ func lv(id: String) -> int:
     return int(w.player.weapons.get(id, 0))
 
 
-func _can_cast(id: String) -> bool:
-    return lv(id) > 0 and float(cd.get(id, 0.0)) <= 0.0
-
-
 func step(delta: float) -> void:
     var p: Dictionary = w.player
     var haste: float = Spells.cooldown_mult(p)
+    orbit += delta * 3.4
+    _resolve_casts(delta)
+    _stag(delta)
     for id in p.weapons.keys():
-        cd[id] = float(cd.get(id, 0.4)) - delta
-    _wand(p, haste)
-    _stupefy(p, haste)
-    _protego(p, delta)
-    _patronus(p, haste, delta)
-    _incendio(p, haste, delta)
-    _glacius(p, haste)
-    _expelliarmus(p, haste)
-    _lumos(p, haste, delta)
+        var level: int = int(p.weapons[id])
+        var def: Dictionary = Spells.WEAPONS[id]
+        var kind: String = def.kind
+        if kind == "orbit":
+            _protego(p, level, delta)
+            continue
+        if kind == "familiar":
+            var pp: Vector2 = p.pos
+            var home: Vector2 = pp + Vector2.from_angle(w.run_time * 1.3) * 26.0
+            familiar = familiar.lerp(home, minf(1.0, delta * 6.0))
+        var left: float = float(cd.get(id, 0.5)) - delta
+        if left > 0.0:
+            cd[id] = left
+        elif _cast(id, def, level, p):
+            cd[id] = Spells.cooldown(def, level) * haste
+        else:
+            cd[id] = 0.2
 
 
-func _wand(p: Dictionary, haste: float) -> void:
-    if not _can_cast("wand"):
-        return
-    var tgt = w.nearest_enemy(p.pos, 300.0)
+func _target(def: Dictionary, origin: Vector2):
+    var mode: String = def.get("tgt", "near")
+    var reach: float = float(def.get("rng", 300.0))
+    if mode == "tough":
+        return w.toughest_enemy(origin, reach)
+    if mode == "rand":
+        return w.random_enemy(origin, reach)
+    if mode == "ranged":
+        var caster = w.nearest_enemy(origin, reach, "ranged")
+        if caster != null:
+            return caster
+    return w.nearest_enemy(origin, reach)
+
+
+func _zone(def: Dictionary, level: int, pos: Vector2) -> Dictionary:
+    return {
+        "pos": pos, "r": Spells.radius(def, level), "life": float(def.life) * (1.0 + 0.08 * (level - 1)),
+        "dmg": Spells.dmg(def, level), "el": def.el, "st": def.get("st", ""), "sd": float(def.get("sd", 0.0)),
+        "pull": float(def.get("pull", 0.0)), "col": def.col,
+    }
+
+
+# Returns false when there is nothing worth casting at (the spell retries shortly).
+func _cast(id: String, def: Dictionary, level: int, p: Dictionary) -> bool:
+    var pp: Vector2 = p.pos
+    var kind: String = def.kind
+    var dmg: float = Spells.dmg(def, level)
+    var col: Color = def.col
+    if kind == "nova":
+        var r: float = Spells.radius(def, level)
+        if def.has("heal"):
+            if p.hp >= p.max_hp:
+                return false
+        elif def.has("dispel"):
+            if w.bolts.is_empty() and w.enemies_in(pp, r).is_empty():
+                return false
+        elif w.enemies_in(pp, r * 1.15).is_empty():
+            return false
+        casts.append({"t": 0.4, "m": 0.4, "id": id, "lv": level, "pos": pp, "follow": true, "r": r})
+        return true
+    if kind == "zone" and def.get("tgt", "near") == "self":
+        w.add_zone(_zone(def, level, pp))
+        return true
+    var origin: Vector2 = pp
+    if kind == "familiar":
+        origin = familiar
+    var tgt = _target(def, origin)
+    if kind == "stag" and w.boss != null:
+        tgt = w.boss
     if tgt == null:
-        cd["wand"] = 0.12
-        return
-    var n: int = lv("wand")
-    cd["wand"] = (0.72 - 0.05 * n) * haste
-    var dir: Vector2 = (tgt.pos - p.pos).normalized()
-    p.aim = dir
-    var count: int = 1
-    if n >= 3:
-        count = 2
-    if n >= 5:
-        count = 3
-    var chain: int = 3 if p.evolved.has("chain") else 0
-    for i in count:
-        var d: Vector2 = dir.rotated((i - (count - 1) * 0.5) * 0.16)
-        w.fire_shot({"kind": "wand", "pos": p.pos + d * 9.0, "vel": d * 340.0, "dmg": 9.0 + 3.0 * n, "r": 4.0, "life": 1.0, "pierce": int(n * 0.5), "chain": chain})
-    w.sound.emit("wand")
+        return false
+    var tp: Vector2 = tgt.pos
+    var dir: Vector2 = (tp - origin).normalized()
+    if dir == Vector2.ZERO:
+        dir = Vector2.UP
+    if kind == "bolt" or kind == "familiar":
+        if id == "wand":
+            p.aim = dir
+        var n: int = Spells.count(def, level)
+        var spread: float = float(def.get("spread", 0.16))
+        var pierce: int = int(def.get("pierce", 0))
+        var chain: int = 0
+        if id == "wand":
+            pierce = int(level * 0.5)
+            if p.evolved.has("chain"):
+                chain = 3
+        for i in n:
+            var d: Vector2 = dir.rotated((i - (n - 1) * 0.5) * spread)
+            if def.has("curve"):
+                d = dir.rotated(0.9 if w.rng.randf() < 0.5 else -0.9)
+            w.fire_shot({
+                "id": id, "el": def.el, "col": col, "pos": origin + d * 9.0, "vel": d * float(def.sp), "dmg": dmg,
+                "r": float(def.get("sr", 4.0)), "life": float(def.get("life", 1.1)), "pierce": pierce, "chain": chain,
+                "turn": float(def.get("turn", 0.0)), "boom": float(def.get("boom", 0.0)), "st": def.get("st", ""),
+                "sd": float(def.get("sd", 0.0)), "kb": float(def.get("kb", 40.0)), "elite": float(def.get("elite", 1.0)),
+            })
+    elif kind == "zone":
+        w.add_zone(_zone(def, level, tp))
+    elif kind == "strike":
+        var count: int = Spells.count(def, level)
+        var delay: float = float(def.get("delay", 0.4))
+        for i in count:
+            var at: Vector2 = tp
+            if i > 0:
+                var other = w.random_enemy(pp, float(def.get("rng", 300.0)))
+                if other != null:
+                    at = other.pos
+            casts.append({"t": delay, "m": delay, "id": id, "lv": level, "pos": at, "follow": false, "r": Spells.radius(def, level)})
+    elif kind == "beam":
+        var length: float = float(def.rng)
+        var width: float = float(def.get("w", 10.0))
+        var seen := {}
+        var steps: int = int(length / 14.0)
+        for i in steps:
+            var sp: Vector2 = pp + dir * (14.0 * (i + 1))
+            for e in w.enemies_in(sp, width):
+                if seen.has(e.id):
+                    continue
+                seen[e.id] = true
+                w.hit(e, dmg, dir * float(def.get("kb", 0.0)), def.el, def.get("st", ""), float(def.get("sd", 0.0)))
+            if i % 2 == 0:
+                w.spawn_part(sp, dir * 60.0 + Vector2(0.0, -12.0), 0.35, col, 1.8, true)
+        w.add_fx({"kind": "line", "a": pp, "b": pp + dir * length, "col": col, "life": 0.22, "width": width * 0.5})
+    elif kind == "stag":
+        stag = {"pos": pp, "dir": dir, "left": 380.0 + 25.0 * level, "width": 22.0 + 4.0 * level, "dmg": dmg, "hit": {}, "sd": float(def.sd)}
+    w.sound.emit(def.get("snd", ""))
+    return true
 
 
-func _stupefy(p: Dictionary, haste: float) -> void:
-    if not _can_cast("stupefy"):
-        return
-    var tgt = w.toughest_enemy(p.pos, 300.0)
-    if tgt == null:
-        cd["stupefy"] = 0.2
-        return
-    var n: int = lv("stupefy")
-    cd["stupefy"] = (3.2 - 0.25 * n) * haste
-    var dir: Vector2 = (tgt.pos - p.pos).normalized()
-    var count: int = 1
-    if n >= 3:
-        count = 3
-    if n >= 5:
-        count = 5
-    for i in count:
-        var d: Vector2 = dir.rotated((i - (count - 1) * 0.5) * 0.22)
-        w.fire_shot({"kind": "stupefy", "pos": p.pos + d * 9.0, "vel": d * 260.0, "dmg": 20.0 + 8.0 * n, "r": 5.0, "life": 1.3, "stun": 0.9 + 0.15 * n})
-    w.sound.emit("stupefy")
+# Novas and strikes land after a short friendly telegraph.
+func _resolve_casts(delta: float) -> void:
+    var keep: Array = []
+    for c in casts:
+        c.t -= delta
+        if c.follow:
+            c.pos = w.player.pos
+        if c.t > 0.0:
+            keep.append(c)
+            continue
+        var def: Dictionary = Spells.WEAPONS[c.id]
+        var pos: Vector2 = c.pos
+        var r: float = c.r
+        var col: Color = def.col
+        if def.has("heal"):
+            w.heal(float(def.heal) * (1.0 + 0.3 * (c.lv - 1)))
+            w.burst(pos, col, 8, 50.0)
+        else:
+            w.blast(pos, r, Spells.dmg(def, c.lv), float(def.get("kb", 0.0)), def.el, def.get("st", ""), float(def.get("sd", 0.0)), def.has("bane"))
+            w.add_fx({"kind": "ring", "pos": pos, "r0": r * 0.3, "r1": r, "col": col, "life": 0.35, "width": 4.0})
+            w.burst(pos, col, 10, 110.0)
+        if def.has("dispel"):
+            w.dispel(pos, r)
+        if def.el == "lightning":
+            w.add_fx({"kind": "line", "a": pos + Vector2(-14.0, -150.0), "b": pos, "col": col, "life": 0.18, "width": 3.0})
+        if def.kind == "strike":
+            w.shake = maxf(w.shake, 0.35)
+        if c.id == "incendio" and w.player.evolved.has("inferno"):
+            w.add_zone({"pos": pos, "r": r * 0.9, "life": 2.6, "dmg": Spells.dmg(def, c.lv) * 0.3, "el": "fire", "st": "burn", "sd": 2.0, "pull": 0.0, "col": col})
+        w.sound.emit(def.get("snd", ""))
+    casts = keep
 
 
 func rune_count() -> int:
@@ -126,17 +233,14 @@ func blocks(pos: Vector2) -> bool:
     return false
 
 
-func _protego(p: Dictionary, delta: float) -> void:
+func _protego(p: Dictionary, level: int, delta: float) -> void:
     var count: int = rune_count()
-    if count <= 0:
-        return
-    orbit += delta * 3.4
     for id in orbit_hit.keys():
         orbit_hit[id] -= delta
         if orbit_hit[id] <= 0.0:
             orbit_hit.erase(id)
-    var n: int = lv("protego")
     var pp: Vector2 = p.pos
+    var dmg: float = Spells.dmg(Spells.WEAPONS["protego"], level)
     for i in count:
         var rp: Vector2 = rune_pos(i, count)
         for e in w.enemies_in(rp, 7.0):
@@ -144,150 +248,79 @@ func _protego(p: Dictionary, delta: float) -> void:
                 continue
             orbit_hit[e.id] = 0.45
             var away: Vector2 = e.pos - pp
-            w.hurt(e, 5.0 + 3.0 * n, away.normalized() * 130.0)
+            w.hit(e, dmg, away.normalized() * 130.0, "light", "", 0.0)
 
 
-func _patronus(p: Dictionary, haste: float, delta: float) -> void:
-    if stag != null:
-        var sd: Vector2 = stag.dir
-        var side: Vector2 = Vector2(-sd.y, sd.x)
-        stag.pos += sd * 430.0 * delta
-        stag.left -= 430.0 * delta
-        var sp: Vector2 = stag.pos
-        for e in w.enemies_in(sp, stag.width):
-            if stag.hit.has(e.id):
-                continue
-            stag.hit[e.id] = true
-            var rel: Vector2 = e.pos - sp
-            var sgn: float = 1.0 if side.dot(rel) >= 0.0 else -1.0
-            w.hurt(e, stag.dmg, side * sgn * 160.0)
-            if e.boss:
-                if e.patronus_weak and e.hp > 0.0:
-                    # The counter-window: the stag staggers Aragog and opens him up.
-                    e.stun = 1.8
-                    e.weak = 4.5
-                    w.add_fx({"kind": "text", "pos": e.pos + Vector2(-34.0, -34.0), "text": "STAGGERED!", "col": Color("bfe9ff"), "life": 1.2})
-            else:
-                e.stun = maxf(e.stun, 0.5)
-        if stag.left <= 0.0:
-            stag = null
+func _stag(delta: float) -> void:
+    if stag == null:
         return
-    if not _can_cast("patronus"):
-        return
-    var tgt = w.boss
-    if tgt == null:
-        tgt = w.nearest_enemy(p.pos, 340.0)
-    if tgt == null:
-        cd["patronus"] = 0.3
-        return
-    var n: int = lv("patronus")
-    cd["patronus"] = (10.0 - 0.9 * n) * haste
-    var dir: Vector2 = (tgt.pos - p.pos).normalized()
-    if dir == Vector2.ZERO:
-        dir = Vector2.UP
-    stag = {"pos": p.pos, "dir": dir, "left": 380.0 + 25.0 * n, "width": 22.0 + 4.0 * n, "dmg": 35.0 + 15.0 * n, "hit": {}}
-    w.sound.emit("patronus")
-
-
-func _incendio(p: Dictionary, haste: float, delta: float) -> void:
-    var pp: Vector2 = p.pos
-    var keep: Array = []
-    for ring in rings:
-        ring.t -= delta
-        if ring.t > 0.0:
-            keep.append(ring)
+    var sd: Vector2 = stag.dir
+    var side: Vector2 = Vector2(-sd.y, sd.x)
+    stag.pos += sd * 430.0 * delta
+    stag.left -= 430.0 * delta
+    var sp: Vector2 = stag.pos
+    w.spawn_part(sp - sd * 10.0, side * w.rng.randf_range(-30.0, 30.0), 0.5, Color("bfe9ff"), 2.0, true)
+    for e in w.enemies_in(sp, stag.width):
+        if stag.hit.has(e.id):
             continue
-        for e in w.enemies_in(pp, ring.r):
-            var away: Vector2 = e.pos - pp
-            w.hurt(e, ring.dmg, away.normalized() * 110.0)
-        w.add_fx({"kind": "ring", "pos": pp, "r0": ring.r * 0.4, "r1": ring.r, "col": Color("ff9a3c"), "life": 0.35, "width": 5.0})
-        if p.evolved.has("inferno"):
-            w.add_zone({"kind": "fire", "pos": pp, "r": ring.r * 0.9, "life": 2.6, "dmg": ring.dmg * 0.3, "slow": false})
-        w.sound.emit("fire")
-    rings = keep
-    if not _can_cast("incendio"):
-        return
-    var n: int = lv("incendio")
-    var radius: float = 50.0 + 10.0 * n
-    if w.enemies_in(pp, radius * 1.25).is_empty():
-        cd["incendio"] = 0.25
-        return
-    cd["incendio"] = (5.2 - 0.4 * n) * haste
-    rings.append({"t": 0.45, "r": radius, "dmg": 16.0 + 8.0 * n})
-
-
-func _glacius(p: Dictionary, haste: float) -> void:
-    if not _can_cast("glacius"):
-        return
-    var tgt = w.nearest_enemy(p.pos, 240.0)
-    if tgt == null:
-        cd["glacius"] = 0.3
-        return
-    var n: int = lv("glacius")
-    cd["glacius"] = (6.5 - 0.4 * n) * haste
-    w.add_zone({"kind": "ice", "pos": tgt.pos, "r": 46.0 + 8.0 * n, "life": 3.0 + 0.3 * n, "dmg": 2.0 + 2.0 * n, "slow": true})
-    w.sound.emit("ice")
-
-
-func _expelliarmus(p: Dictionary, haste: float) -> void:
-    if not _can_cast("expelliarmus"):
-        return
-    var tgt = w.nearest_enemy(p.pos, 320.0, "ranged")
-    if tgt == null:
-        tgt = w.nearest_enemy(p.pos, 320.0)
-    if tgt == null:
-        cd["expelliarmus"] = 0.3
-        return
-    var n: int = lv("expelliarmus")
-    cd["expelliarmus"] = (2.6 - 0.2 * n) * haste
-    var dir: Vector2 = (tgt.pos - p.pos).normalized()
-    var curve: float = 0.9 if w.rng.randf() < 0.5 else -0.9
-    var d: Vector2 = dir.rotated(curve)
-    w.fire_shot({"kind": "expelliarmus", "pos": p.pos + d * 9.0, "vel": d * 230.0, "dmg": 12.0 + 5.0 * n, "r": 5.0, "life": 1.8, "turn": 5.0, "disarm": 2.5 + 0.4 * n})
-
-
-func _lumos(p: Dictionary, haste: float, delta: float) -> void:
-    var n: int = lv("lumos")
-    if n <= 0:
-        return
-    var pp: Vector2 = p.pos
-    var home: Vector2 = pp + Vector2.from_angle(w.run_time * 1.3) * 26.0
-    familiar = familiar.lerp(home, minf(1.0, delta * 6.0))
-    if float(cd.get("lumos", 0.0)) > 0.0:
-        return
-    var tgt = w.nearest_enemy(familiar, 220.0)
-    if tgt == null:
-        cd["lumos"] = 0.15
-        return
-    cd["lumos"] = (1.0 - 0.1 * n) * haste
-    var to: Vector2 = tgt.pos - familiar
-    w.fire_shot({"kind": "lumos", "pos": familiar, "vel": to.normalized() * 300.0, "dmg": 4.0 + 2.0 * n, "r": 3.0, "life": 0.9})
+        stag.hit[e.id] = true
+        var rel: Vector2 = e.pos - sp
+        var sgn: float = 1.0 if side.dot(rel) >= 0.0 else -1.0
+        w.hit(e, stag.dmg, side * sgn * 160.0, "light", "mark", stag.sd)
+        if e.hp <= 0.0:
+            continue
+        if e.boss:
+            if e.patronus_weak:
+                # The counter-window: the stag staggers dark bosses and opens them up.
+                e.hold = maxf(e.hold, 1.8)
+                w.add_fx({"kind": "text", "pos": e.pos + Vector2(-34.0, -34.0), "text": I18n.t("ui_stagger"), "col": Color("bfe9ff"), "life": 1.2})
+        else:
+            w.apply_status(e, "stun", 0.5)
+    if stag.left <= 0.0:
+        stag = null
 
 
 ## Friendly visuals stay cyan / gold / blue-white so they never read as threats.
 func draw(ci: CanvasItem) -> void:
-    var pp: Vector2 = w.player.pos
     var count: int = rune_count()
     for i in count:
-        var rp: Vector2 = rune_pos(i, count)
+        var rp: Vector2 = rune_pos(i, count) + Vector2(0.0, -5.0)
         ci.draw_circle(rp, 4.0, Color("67dcf4"))
         ci.draw_arc(rp, 6.0, orbit * 2.0, orbit * 2.0 + 4.0, 8, Color("f0d278"), 1.5)
-    for ring in rings:
-        var k: float = 1.0 - clampf(ring.t / 0.45, 0.0, 1.0)
-        ci.draw_arc(pp, ring.r, 0.0, TAU, 28, Color(1.0, 0.82, 0.35, 0.35 + 0.4 * k), 1.5)
-        ci.draw_arc(pp, maxf(2.0, ring.r * k), 0.0, TAU, 24, Color(1.0, 0.6, 0.2, 0.8), 2.0)
+    for c in casts:
+        var def: Dictionary = Spells.WEAPONS[c.id]
+        var col: Color = def.col
+        var k: float = 1.0 - clampf(c.t / maxf(c.m, 0.01), 0.0, 1.0)
+        var cp: Vector2 = c.pos
+        ci.draw_arc(cp, c.r, 0.0, TAU, 28, Color(col, 0.3 + 0.4 * k), 1.2)
+        ci.draw_arc(cp, maxf(2.0, c.r * k), 0.0, TAU, 24, Color(col, 0.85), 1.6)
     if lv("lumos") > 0:
-        ci.draw_circle(familiar, 5.0, Color(1.0, 0.95, 0.7, 0.3))
-        ci.draw_circle(familiar, 2.5, Color("fff3c0"))
+        var fp: Vector2 = familiar + Vector2(0.0, -10.0)
+        ci.draw_circle(familiar + Vector2(0.0, 3.0), 3.0, Color(0.0, 0.0, 0.0, 0.25))
+        ci.draw_circle(fp, 2.6, Color("fff3c0"))
     if stag != null:
-        var sp: Vector2 = stag.pos
+        var sp: Vector2 = stag.pos + Vector2(0.0, -4.0)
         var sd: Vector2 = stag.dir
         var ss: Vector2 = Vector2(-sd.y, sd.x)
         var white := Color(1.0, 1.0, 1.0)
-        ci.draw_circle(sp, stag.width, Color(0.6, 0.9, 1.0, 0.18))
         ci.draw_line(sp - sd * 12.0, sp - sd * 40.0, Color(0.6, 0.9, 1.0, 0.5), 4.0)
         ci.draw_circle(sp - sd * 8.0, 7.0, Color(0.85, 0.97, 1.0, 0.9))
         ci.draw_circle(sp + sd * 2.0, 6.0, Color(0.9, 0.98, 1.0, 0.95))
         ci.draw_circle(sp + sd * 9.0, 4.0, white)
         ci.draw_line(sp + sd * 10.0, sp + sd * 16.0 + ss * 6.0, white, 1.5)
         ci.draw_line(sp + sd * 10.0, sp + sd * 16.0 - ss * 6.0, white, 1.5)
+
+
+## Additive glow for the same things (drawn on the world's glow layer).
+func glow(ci: CanvasItem, tex: Texture2D) -> void:
+    var count: int = rune_count()
+    for i in count:
+        var rp: Vector2 = rune_pos(i, count) + Vector2(0.0, -5.0)
+        ci.draw_texture_rect(tex, Rect2(rp - Vector2(12.0, 12.0), Vector2(24.0, 24.0)), false, Color(0.4, 0.86, 0.96, 0.6))
+    if lv("lumos") > 0:
+        var fp: Vector2 = familiar + Vector2(0.0, -10.0)
+        ci.draw_texture_rect(tex, Rect2(fp - Vector2(26.0, 26.0), Vector2(52.0, 52.0)), false, Color(1.0, 0.95, 0.7, 0.5))
+    if stag != null:
+        var sp: Vector2 = stag.pos
+        var r: float = stag.width * 1.8
+        ci.draw_texture_rect(tex, Rect2(sp - Vector2(r, r), Vector2(r * 2.0, r * 2.0)), false, Color(0.6, 0.9, 1.0, 0.7))

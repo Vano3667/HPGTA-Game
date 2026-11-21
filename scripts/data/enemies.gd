@@ -1,143 +1,107 @@
 extends RefCounted
 ## Enemy and boss archetypes plus the factory that turns them into runtime dictionaries.
+## Display names live in i18n.gd as en_<type> and bo_<key>.
 
 const HOSTILE := Color("ff7a2a")
-const CURSE := Color("5de46a")
 
-# ai: chase | weave | ranged | charge. look: which code-drawn sprite art.gd uses.
+# ai: chase | weave | ranged | charge. look: code-drawn sprite in art.gd.
+# spr: painted sprite (art/gen/mob_<spr>.png) used when it exists. fly: hovers. dark: weak to Lumos Solem.
 const TYPES := {
-    "cauldron": {"hp": 11.0, "speed": 44.0, "r": 8.0, "dmg": 7.0, "xp": 1, "ai": "chase", "look": "blob", "col": Color("2b2a2e"), "col2": Color("7be06a")},
-    "pixie": {"hp": 7.0, "speed": 86.0, "r": 5.0, "dmg": 4.0, "xp": 1, "ai": "weave", "look": "pixie", "col": Color("9ce8ec"), "col2": Color("d1ffff")},
-    "display": {"hp": 46.0, "speed": 30.0, "r": 10.0, "dmg": 10.0, "xp": 3, "ai": "chase", "look": "box", "col": Color("916a46"), "col2": Color("d39b4d")},
-    "masked": {"hp": 24.0, "speed": 38.0, "r": 8.0, "dmg": 8.0, "xp": 3, "ai": "ranged", "look": "wizard", "col": Color("2a2230"), "col2": Color("ff7a2a")},
-    "armor": {"hp": 60.0, "speed": 28.0, "r": 10.0, "dmg": 11.0, "xp": 3, "ai": "chase", "look": "armor", "col": Color("5b5e59"), "col2": Color("eecc63")},
-    "book": {"hp": 12.0, "speed": 78.0, "r": 6.0, "dmg": 5.0, "xp": 1, "ai": "weave", "look": "box", "col": Color("6b3a2e"), "col2": Color("e6d7a8")},
-    "portrait": {"hp": 30.0, "speed": 26.0, "r": 9.0, "dmg": 8.0, "xp": 3, "ai": "ranged", "look": "box", "col": Color("3b4a5a"), "col2": Color("c9a24c")},
-    "spider": {"hp": 18.0, "speed": 70.0, "r": 7.0, "dmg": 7.0, "xp": 1, "ai": "chase", "look": "spider", "col": Color("493431"), "col2": Color("5a3737")},
-    "dementor": {"hp": 55.0, "speed": 36.0, "r": 10.0, "dmg": 12.0, "xp": 4, "ai": "weave", "look": "dementor", "col": Color("141a20"), "col2": Color("a4bfce")},
-    "plant": {"hp": 40.0, "speed": 14.0, "r": 9.0, "dmg": 8.0, "xp": 3, "ai": "ranged", "look": "plant", "col": Color("35592f"), "col2": Color("b6d65a")},
-    "centaur": {"hp": 70.0, "speed": 48.0, "r": 10.0, "dmg": 14.0, "xp": 5, "ai": "charge", "look": "beast", "col": Color("6b5a44"), "col2": Color("b3a887")},
-    "bludger": {"hp": 26.0, "speed": 60.0, "r": 6.0, "dmg": 12.0, "xp": 2, "ai": "charge", "look": "ball", "col": Color("2a2422"), "col2": Color("8a7f72")},
-    "dummy": {"hp": 85.0, "speed": 26.0, "r": 10.0, "dmg": 10.0, "xp": 4, "ai": "chase", "look": "box", "col": Color("7a6a4a"), "col2": Color("d8cb91")},
-    "flier": {"hp": 34.0, "speed": 58.0, "r": 8.0, "dmg": 9.0, "xp": 4, "ai": "ranged", "look": "wizard", "col": Color("3a2f4a"), "col2": Color("ff7a2a")},
-    "inferi": {"hp": 26.0, "speed": 74.0, "r": 7.0, "dmg": 9.0, "xp": 1, "ai": "chase", "look": "inferi", "col": Color("58755c"), "col2": Color("9cb275")},
-    "deatheater": {"hp": 60.0, "speed": 40.0, "r": 8.0, "dmg": 13.0, "xp": 5, "ai": "ranged", "look": "wizard", "col": Color("171a1c"), "col2": Color("5de46a"), "bolt": Color("5de46a")},
-    "echo": {"hp": 30.0, "speed": 82.0, "r": 7.0, "dmg": 8.0, "xp": 2, "ai": "weave", "look": "echo", "col": Color("6fa8c8"), "col2": Color("c4e8e7")},
-    "construct": {"hp": 130.0, "speed": 34.0, "r": 12.0, "dmg": 16.0, "xp": 7, "ai": "charge", "look": "armor", "col": Color("4a4436"), "col2": Color("d6b85a")},
-    "frostwitch": {"hp": 52.0, "speed": 40.0, "r": 9.0, "dmg": 12.0, "xp": 4, "ai": "ranged", "look": "wizard", "col": Color("52677d"), "col2": Color("8edbff"), "bolt": Color("bfefff")},
-    "icegolem": {"hp": 105.0, "speed": 29.0, "r": 12.0, "dmg": 15.0, "xp": 5, "ai": "chase", "look": "golem", "col": Color("8eaec3"), "col2": Color("e6fbff")},
-    "serpent": {"hp": 45.0, "speed": 72.0, "r": 9.0, "dmg": 11.0, "xp": 3, "ai": "weave", "look": "serpent", "col": Color("485d47"), "col2": Color("77ec9b")},
-    "cultist": {"hp": 45.0, "speed": 43.0, "r": 8.0, "dmg": 12.0, "xp": 4, "ai": "ranged", "look": "wizard", "col": Color("30443c"), "col2": Color("54e39a"), "bolt": Color("54e39a")},
-    "wisp": {"hp": 36.0, "speed": 88.0, "r": 7.0, "dmg": 9.0, "xp": 3, "ai": "weave", "look": "wisp", "col": Color("5da99c"), "col2": Color("c7fff1")},
-    "shadecarriage": {"hp": 82.0, "speed": 32.0, "r": 12.0, "dmg": 15.0, "xp": 5, "ai": "chase", "look": "coach", "col": Color("382d49"), "col2": Color("c45cff")},
-    "owl": {"hp": 30.0, "speed": 94.0, "r": 7.0, "dmg": 8.0, "xp": 3, "ai": "weave", "look": "owl", "col": Color("5e536f"), "col2": Color("a9d6ff")},
-    "prisoner": {"hp": 42.0, "speed": 66.0, "r": 8.0, "dmg": 10.0, "xp": 3, "ai": "chase", "look": "inferi", "col": Color("617078"), "col2": Color("91d9dd")},
-    "sentinel": {"hp": 115.0, "speed": 31.0, "r": 12.0, "dmg": 16.0, "xp": 6, "ai": "charge", "look": "gargoyle", "col": Color("526168"), "col2": Color("72e2dd")},
-    "gargoyle": {"hp": 72.0, "speed": 58.0, "r": 10.0, "dmg": 14.0, "xp": 5, "ai": "charge", "look": "gargoyle", "col": Color("615c70"), "col2": Color("b5a7ff")},
+    "cauldron": {"hp": 11.0, "speed": 44.0, "r": 8.0, "dmg": 7.0, "xp": 1, "ai": "chase", "look": "blob", "spr": "cauldron", "col": Color("3a3840"), "col2": Color("7be06a")},
+    "pixie": {"hp": 7.0, "speed": 86.0, "r": 5.0, "dmg": 4.0, "xp": 1, "ai": "weave", "look": "pixie", "spr": "sprite", "fly": true, "col": Color("7ad8e8"), "col2": Color("d1ffff")},
+    "display": {"hp": 46.0, "speed": 30.0, "r": 10.0, "dmg": 10.0, "xp": 3, "ai": "chase", "look": "box", "spr": "mimic", "col": Color("916a46"), "col2": Color("d39b4d")},
+    "masked": {"hp": 24.0, "speed": 38.0, "r": 8.0, "dmg": 8.0, "xp": 3, "ai": "ranged", "look": "wizard", "spr": "caster", "col": Color("3a2e44"), "col2": Color("ff7a2a")},
+    "armor": {"hp": 60.0, "speed": 28.0, "r": 10.0, "dmg": 11.0, "xp": 3, "ai": "chase", "look": "armor", "spr": "armor", "col": Color("7a7e78"), "col2": Color("eecc63")},
+    "book": {"hp": 12.0, "speed": 78.0, "r": 6.0, "dmg": 5.0, "xp": 1, "ai": "weave", "look": "box", "spr": "book", "fly": true, "col": Color("7b3a2e"), "col2": Color("e6d7a8")},
+    "portrait": {"hp": 30.0, "speed": 26.0, "r": 9.0, "dmg": 8.0, "xp": 3, "ai": "ranged", "look": "box", "spr": "portrait", "col": Color("3b4a5a"), "col2": Color("c9a24c")},
+    "spider": {"hp": 18.0, "speed": 70.0, "r": 7.0, "dmg": 7.0, "xp": 1, "ai": "chase", "look": "spider", "spr": "spider", "dark": true, "col": Color("5a3e3a"), "col2": Color("7a4a44")},
+    "dementor": {"hp": 55.0, "speed": 36.0, "r": 10.0, "dmg": 12.0, "xp": 4, "ai": "weave", "look": "dementor", "spr": "wraith", "fly": true, "dark": true, "col": Color("1c242c"), "col2": Color("a4bfce")},
+    "plant": {"hp": 40.0, "speed": 14.0, "r": 9.0, "dmg": 8.0, "xp": 3, "ai": "ranged", "look": "plant", "spr": "plant", "col": Color("35592f"), "col2": Color("b6d65a")},
+    "centaur": {"hp": 70.0, "speed": 48.0, "r": 10.0, "dmg": 14.0, "xp": 5, "ai": "charge", "look": "beast", "spr": "centaur", "col": Color("7b6a54"), "col2": Color("b3a887")},
+    "bludger": {"hp": 26.0, "speed": 60.0, "r": 6.0, "dmg": 12.0, "xp": 2, "ai": "charge", "look": "ball", "spr": "ball", "fly": true, "col": Color("3a3432"), "col2": Color("8a7f72")},
+    "dummy": {"hp": 85.0, "speed": 26.0, "r": 10.0, "dmg": 10.0, "xp": 4, "ai": "chase", "look": "box", "spr": "automaton", "col": Color("7a6a4a"), "col2": Color("d8cb91")},
+    "flier": {"hp": 34.0, "speed": 58.0, "r": 8.0, "dmg": 9.0, "xp": 4, "ai": "ranged", "look": "wizard", "spr": "caster", "fly": true, "col": Color("4a3f5a"), "col2": Color("ff7a2a")},
+    "inferi": {"hp": 26.0, "speed": 74.0, "r": 7.0, "dmg": 9.0, "xp": 1, "ai": "chase", "look": "inferi", "spr": "drowned", "dark": true, "col": Color("58755c"), "col2": Color("9cb275")},
+    "deatheater": {"hp": 60.0, "speed": 40.0, "r": 8.0, "dmg": 13.0, "xp": 5, "ai": "ranged", "look": "wizard", "spr": "caster", "col": Color("22262a"), "col2": Color("5de46a"), "bolt": Color("5de46a")},
+    "echo": {"hp": 30.0, "speed": 82.0, "r": 7.0, "dmg": 8.0, "xp": 2, "ai": "weave", "look": "echo", "spr": "", "fly": true, "col": Color("6fa8c8"), "col2": Color("c4e8e7")},
+    "construct": {"hp": 130.0, "speed": 34.0, "r": 12.0, "dmg": 16.0, "xp": 7, "ai": "charge", "look": "armor", "spr": "automaton", "col": Color("5a5446"), "col2": Color("d6b85a")},
+    "snowman": {"hp": 30.0, "speed": 36.0, "r": 9.0, "dmg": 8.0, "xp": 2, "ai": "chase", "look": "blob", "spr": "", "col": Color("e4ecf0"), "col2": Color("ff9a4a")},
+    "werewolf": {"hp": 60.0, "speed": 56.0, "r": 10.0, "dmg": 13.0, "xp": 5, "ai": "charge", "look": "beast", "spr": "", "dark": true, "col": Color("6a655a"), "col2": Color("b3a887")},
+    "snatcher": {"hp": 44.0, "speed": 52.0, "r": 8.0, "dmg": 11.0, "xp": 4, "ai": "charge", "look": "wizard", "spr": "caster", "col": Color("4a3a2e"), "col2": Color("c8a070")},
+    "snake": {"hp": 20.0, "speed": 80.0, "r": 6.0, "dmg": 8.0, "xp": 1, "ai": "weave", "look": "snake", "spr": "serpent", "col": Color("5a8a5c"), "col2": Color("bdcb8e")},
+    "spawn": {"hp": 95.0, "speed": 40.0, "r": 11.0, "dmg": 15.0, "xp": 6, "ai": "charge", "look": "snake", "spr": "serpent", "col": Color("3e6a48"), "col2": Color("e6ce60")},
+    "prisoner": {"hp": 34.0, "speed": 70.0, "r": 7.0, "dmg": 11.0, "xp": 2, "ai": "chase", "look": "inferi", "spr": "drowned", "dark": true, "col": Color("6a6a72"), "col2": Color("a8a8b4")},
+    "wraith": {"hp": 40.0, "speed": 86.0, "r": 7.0, "dmg": 10.0, "xp": 3, "ai": "weave", "look": "echo", "spr": "wraith", "fly": true, "dark": true, "col": Color("8aa0c8"), "col2": Color("d8e4ff")},
+    "frostwitch": {"hp": 40.0, "speed": 40.0, "r": 8.0, "dmg": 11.0, "xp": 4, "ai": "ranged", "look": "wizard", "spr": "frostwitch", "col": Color("8ab4d8"), "col2": Color("d8f0ff"), "bolt": Color("ff9a4a")},
+    "cultist": {"hp": 44.0, "speed": 40.0, "r": 8.0, "dmg": 12.0, "xp": 4, "ai": "ranged", "look": "wizard", "spr": "caster", "col": Color("2e4a3a"), "col2": Color("54e39a"), "bolt": Color("5de46a")},
+    "carriage": {"hp": 80.0, "speed": 50.0, "r": 11.0, "dmg": 16.0, "xp": 5, "ai": "charge", "look": "box", "spr": "carriage", "dark": true, "col": Color("3a3448"), "col2": Color("c45cff")},
+    "owl": {"hp": 30.0, "speed": 88.0, "r": 6.0, "dmg": 10.0, "xp": 2, "ai": "weave", "look": "pixie", "spr": "owl", "fly": true, "col": Color("8a7a5a"), "col2": Color("d8c477")},
+    "guard": {"hp": 90.0, "speed": 34.0, "r": 10.0, "dmg": 14.0, "xp": 5, "ai": "chase", "look": "armor", "spr": "guard", "col": Color("4c5a63"), "col2": Color("8edee9")},
+    "gargoyle": {"hp": 70.0, "speed": 52.0, "r": 9.0, "dmg": 15.0, "xp": 5, "ai": "charge", "look": "beast", "spr": "gargoyle", "fly": true, "col": Color("6a6a7a"), "col2": Color("9c86ff")},
 }
 
 # patterns[phase] lists the attacks a boss cycles through; phases switch at 66% and 33% health.
+# The first five are chapter guardians, the last five are the story bosses fought in their own arenas.
 const BOSSES := {
-    "warden": {
-        "name": "The Alley Warden", "hp": 1100.0, "speed": 40.0, "r": 20.0, "dmg": 16.0, "look": "armor",
-        "col": Color("4f4a42"), "col2": Color("eecc63"), "bolt": Color("ff7a2a"), "tell": 0.95, "rest": 1.5, "patronus_weak": false,
-        "patterns": [["ring", "charge"], ["ring", "fan", "charge"], ["ring", "summon", "fan"]],
-    },
-    "sentinel": {
-        "name": "The Stone Sentinel", "hp": 2000.0, "speed": 30.0, "r": 24.0, "dmg": 20.0, "look": "armor",
-        "col": Color("6a6d66"), "col2": Color("c4a149"), "bolt": Color("ff7a2a"), "tell": 1.0, "rest": 1.4, "patronus_weak": false,
-        "patterns": [["fan", "slam"], ["fan", "slam", "summon"], ["slam", "fan", "slam", "ring"]],
-    },
-    "aragog": {
-        "name": "Aragog", "hp": 4000.0, "speed": 46.0, "r": 26.0, "dmg": 22.0, "look": "spider",
-        "col": Color("493431"), "col2": Color("704038"), "bolt": Color("ff7a2a"), "tell": 0.95, "rest": 1.3, "patronus_weak": true,
-        "patterns": [["web", "ring"], ["web", "charge", "ring"], ["summon", "web", "ring", "charge"]],
-    },
-    "snitch": {
-        "name": "The Snitch Storm", "hp": 5500.0, "speed": 70.0, "r": 16.0, "dmg": 24.0, "look": "snitch",
-        "col": Color("d9b23c"), "col2": Color("fff0a8"), "bolt": Color("ffb020"), "tell": 0.9, "rest": 1.2, "patronus_weak": false,
-        "patterns": [["spin", "charge"], ["spin", "charge", "fan"], ["spin", "summon", "charge"]],
-    },
-    "hex": {
-        "name": "The Hex Disturbance", "hp": 8000.0, "speed": 34.0, "r": 28.0, "dmg": 26.0, "look": "hex",
-        "col": Color("15191d"), "col2": Color("47ed5b"), "bolt": Color("5de46a"), "tell": 0.9, "rest": 1.2, "patronus_weak": false,
-        "patterns": [["fan", "fan", "summon"], ["ring", "spin", "fan"], ["core", "fan", "ring"]],
-    },
-    "frostmaiden": {
-        "name": "The Frost Maiden", "hp": 9800.0, "speed": 38.0, "r": 22.0, "dmg": 28.0, "look": "wizard",
-        "col": Color("58728c"), "col2": Color("d9f6ff"), "bolt": Color("bfefff"), "tell": 0.92, "rest": 1.2, "patronus_weak": false,
-        "patterns": [["fan", "ring"], ["fan", "summon", "ring"], ["spin", "fan", "charge"]],
-    },
-    "basilisk": {
-        "name": "The Vault Serpent", "hp": 11800.0, "speed": 50.0, "r": 30.0, "dmg": 30.0, "look": "serpent",
-        "col": Color("405b45"), "col2": Color("86ef9f"), "bolt": Color("54e39a"), "tell": 0.9, "rest": 1.1, "patronus_weak": false,
-        "patterns": [["charge", "ring"], ["summon", "fan", "charge"], ["spin", "charge", "fan"]],
-    },
-    "nightcoach": {
-        "name": "The Night Coach", "hp": 13800.0, "speed": 44.0, "r": 28.0, "dmg": 32.0, "look": "coach",
-        "col": Color("36294a"), "col2": Color("d086ff"), "bolt": Color("c45cff"), "tell": 0.88, "rest": 1.05, "patronus_weak": false,
-        "patterns": [["charge", "fan"], ["ring", "charge", "summon"], ["spin", "charge", "fan"]],
-    },
-    "jailer": {
-        "name": "The Black Tide Jailer", "hp": 16000.0, "speed": 35.0, "r": 30.0, "dmg": 35.0, "look": "gargoyle",
-        "col": Color("425967"), "col2": Color("8ae9e5"), "bolt": Color("62e7ea"), "tell": 0.94, "rest": 1.1, "patronus_weak": false,
-        "patterns": [["slam", "fan"], ["summon", "ring", "slam"], ["spin", "fan", "charge"]],
-    },
-    "astromancer": {
-        "name": "The Storm Astromancer", "hp": 19000.0, "speed": 42.0, "r": 25.0, "dmg": 38.0, "look": "wizard",
-        "col": Color("484064"), "col2": Color("c4b8ff"), "bolt": Color("9c86ff"), "tell": 0.86, "rest": 1.0, "patronus_weak": false,
-        "patterns": [["fan", "ring"], ["spin", "summon", "fan"], ["charge", "spin", "ring"]],
-    },
+    "warden": {"hp": 750.0, "speed": 40.0, "r": 20.0, "dmg": 16.0, "look": "armor", "col": Color("5f5a52"), "col2": Color("eecc63"), "bolt": Color("ff7a2a"), "tell": 0.95, "rest": 1.5,
+        "patterns": [["ring", "charge"], ["ring", "fan", "charge"], ["ring", "summon", "fan"]]},
+    "aragog": {"hp": 2400.0, "speed": 46.0, "r": 26.0, "dmg": 20.0, "look": "spider", "spr": "", "dark": true, "patronus_weak": true, "col": Color("5a403a"), "col2": Color("80483e"), "bolt": Color("ff7a2a"), "tell": 0.95, "rest": 1.3,
+        "patterns": [["web", "ring"], ["web", "charge", "ring"], ["summon", "web", "ring", "charge"]]},
+    "hex": {"hp": 4000.0, "speed": 34.0, "r": 26.0, "dmg": 22.0, "look": "hex", "fly": true, "col": Color("15191d"), "col2": Color("47ed5b"), "bolt": Color("5de46a"), "tell": 0.9, "rest": 1.2,
+        "patterns": [["fan", "fan", "summon"], ["ring", "spin", "blink"], ["core", "fan", "ring"]]},
+    "idol": {"hp": 5600.0, "speed": 30.0, "r": 24.0, "dmg": 24.0, "look": "armor", "col": Color("4e6a52"), "col2": Color("e6ce60"), "bolt": Color("5de46a"), "tell": 1.0, "rest": 1.3,
+        "patterns": [["fan", "slam"], ["gaze", "slam", "summon"], ["slam", "gaze", "fan", "ring"]]},
+    "greyback": {"hp": 7200.0, "speed": 64.0, "r": 18.0, "dmg": 26.0, "look": "beast", "dark": true, "col": Color("5a554a"), "col2": Color("c8bfa0"), "bolt": Color("ff7a2a"), "tell": 0.8, "rest": 1.1,
+        "patterns": [["charge", "charge", "fan"], ["charge", "summon", "charge"], ["charge", "charge", "ring"]]},
+    "quirrell": {"hp": 1700.0, "speed": 46.0, "r": 14.0, "dmg": 18.0, "look": "wizard", "spr": "quirrell", "col": Color("4a3a5a"), "col2": Color("c8a0ff"), "bolt": Color("c45cff"), "tell": 0.9, "rest": 1.3,
+        "patterns": [["fan", "twin"], ["twin", "ring", "blink"], ["twin", "spin", "blink", "summon"]]},
+    "basilisk": {"hp": 3400.0, "speed": 48.0, "r": 24.0, "dmg": 22.0, "look": "snake", "spr": "basilisk", "col": Color("4e7a52"), "col2": Color("e6ce60"), "bolt": Color("5de46a"), "tell": 0.95, "rest": 1.2,
+        "patterns": [["gaze", "charge"], ["gaze", "web", "charge"], ["gaze", "fan", "charge", "summon"]]},
+    "dementor": {"hp": 5000.0, "speed": 42.0, "r": 22.0, "dmg": 24.0, "look": "dementor", "spr": "dementor", "fly": true, "dark": true, "patronus_weak": true, "col": Color("141a22"), "col2": Color("a4bfce"), "bolt": Color("8ad0ff"), "tell": 0.9, "rest": 1.2,
+        "patterns": [["web", "ring"], ["web", "summon", "fan"], ["blink", "ring", "web", "spin"]]},
+    "nagini": {"hp": 6600.0, "speed": 62.0, "r": 20.0, "dmg": 26.0, "look": "snake", "spr": "nagini", "dark": true, "col": Color("3a4a3a"), "col2": Color("9adf7a"), "bolt": Color("5de46a"), "tell": 0.8, "rest": 1.0,
+        "patterns": [["charge", "fan"], ["charge", "charge", "web"], ["charge", "summon", "charge", "ring"]]},
+    "voldemort": {"hp": 9800.0, "speed": 50.0, "r": 14.0, "dmg": 28.0, "look": "wizard", "spr": "voldemort", "dark": true, "col": Color("1c1a22"), "col2": Color("5de46a"), "bolt": Color("5de46a"), "tell": 0.8, "rest": 1.0,
+        "patterns": [["fan", "blink", "twin"], ["spin", "blink", "gaze", "summon"], ["core", "blink", "twin", "breath", "spin"]]},
 }
 
 
-static func _base(id: int, type: String, pos: Vector2) -> Dictionary:
+static func _base(id: int, type: String, pos: Vector2, d: Dictionary) -> Dictionary:
     return {
         "id": id, "type": type, "pos": pos, "kb": Vector2.ZERO, "face": Vector2.DOWN, "dir": Vector2.DOWN,
-        "t": 0.0, "flash": 0.0, "stun": 0.0, "slow": 0.0, "weak": 0.0, "disarm": 0.0,
+        "t": 0.0, "flash": 0.0, "hold": 0.0, "burn_t": 0.0, "s": {}, "dead": false,
         "cd": 1.5, "shot_cd": 2.8, "state": "", "state_t": 0.0, "boss": false, "elite": false,
+        "speed": d.speed, "ai": d.get("ai", "boss"), "look": d.look, "spr": d.get("spr", ""), "col": d.col, "col2": d.col2,
+        "bolt": d.get("bolt", HOSTILE), "fly": d.get("fly", false), "dark": d.get("dark", false),
     }
 
 
 static func make(type: String, pos: Vector2, id: int, hp_mult: float, elite: bool) -> Dictionary:
     var d: Dictionary = TYPES[type]
-    var e: Dictionary = _base(id, type, pos)
+    var e: Dictionary = _base(id, type, pos, d)
     var m: float = hp_mult * (6.0 if elite else 1.0)
     e["hp"] = d.hp * m
     e["max_hp"] = d.hp * m
-    e["speed"] = d.speed
     e["r"] = d.r * (1.4 if elite else 1.0)
     e["dmg"] = d.dmg * (1.5 if elite else 1.0)
     e["xp"] = d.xp * (8 if elite else 1)
-    e["ai"] = d.ai
-    e["look"] = d.look
-    e["col"] = d.col
-    e["col2"] = d.col2
-    e["bolt"] = d.get("bolt", HOSTILE)
     e["elite"] = elite
     return e
 
 
 static func make_boss(key: String, pos: Vector2, id: int) -> Dictionary:
     var d: Dictionary = BOSSES[key]
-    var e: Dictionary = _base(id, key, pos)
+    var e: Dictionary = _base(id, key, pos, d)
     e["hp"] = d.hp
     e["max_hp"] = d.hp
-    e["speed"] = d.speed
     e["r"] = d.r
     e["dmg"] = d.dmg
     e["xp"] = 0
-    e["ai"] = "boss"
-    e["look"] = d.look
-    e["col"] = d.col
-    e["col2"] = d.col2
-    e["bolt"] = d.bolt
     e["boss"] = true
-    e["name"] = d.name
     e["patterns"] = d.patterns
     e["tell"] = d.tell
     e["rest"] = d.rest
-    e["patronus_weak"] = d.patronus_weak
+    e["patronus_weak"] = d.get("patronus_weak", false)
     e["pat"] = ""
     e["gap"] = 0.0
     e["mark"] = pos

@@ -1,10 +1,12 @@
 extends RefCounted
-## Local-only persistence: settings, lifetime stats and the chapter checkpoint.
+## Local-only persistence: settings, lifetime stats, meta progress and the stage checkpoint.
 ## Nothing leaves the device; there is no account, network or analytics.
 
 const PATH := "user://hex_district.cfg"
 
 var data := {
+    # "" = follow the device language on first launch
+    "lang": "",
     # one-thumb control options
     "right_handed": true,
     "stick_size": 56.0,
@@ -16,12 +18,22 @@ var data := {
     "flash": true,
     "high_contrast": false,
     "sound": true,
+    "music": true,
+    "sprites": true,
     # progress
     "runs": 0,
     "wins": 0,
     "best_chapter": 0,
     "best_kills": 0,
+    "best_endless": 0,
     "checkpoint": {},
+    # meta progress between runs
+    "gold": 0,
+    "meta": {},
+    "hero": "harry",
+    "heroes": ["harry"],
+    "seen": {},
+    "tutorial": false,
 }
 
 

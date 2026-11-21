@@ -6,6 +6,10 @@ on:
     paths-ignore:
       - "refs/**"
       - "**.md"
+  pull_request:
+    paths-ignore:
+      - "refs/**"
+      - "**.md"
   workflow_dispatch:
 
 permissions:
@@ -22,25 +26,28 @@ jobs:
   test:
     name: Import and headless smoke test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     container:
       image: barichello/godot-ci:4.3
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Build runtime sprites from the visual kit
+        run: godot --headless --path . -s res://tools/build_sprites.gd 2>&1 | tee sprites.log
       - name: Import project
         run: godot --headless --path . --import 2>&1 | tee import.log
-      - name: Smoke test (bot plays all five chapters)
+      - name: Smoke test (bot plays the story, endless mode and every menu)
         run: godot --headless --path . -s res://tests/smoke_test.gd 2>&1 | tee smoke.log
       - name: Fail on script errors
         run: |
-          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script" import.log smoke.log; then
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script" sprites.log import.log smoke.log; then
             echo "::error::GDScript errors found"
             exit 1
           fi
           if grep -F "[smoke] FAIL" smoke.log; then
             exit 1
           fi
+          grep -F "[sprites] done" sprites.log
           grep -F "[smoke] PASS" smoke.log
           echo "Engine ERROR lines (informational): $(grep -c 'ERROR:' smoke.log || true)"
 
@@ -61,6 +68,10 @@ jobs:
             cp -r /root/.config/godot ~/.config/godot
             cp -r /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           fi
+      - name: Build runtime sprites from the visual kit
+        run: godot --headless --path . -s res://tools/build_sprites.gd 2>&1 | grep -F "[sprites]"
+      - name: Import project
+        run: godot --headless --path . --import 2>&1 | tail -n 5
       - name: Export debug APK
         run: |
           mkdir -p build/android

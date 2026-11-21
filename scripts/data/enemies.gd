@@ -42,26 +42,28 @@ const TYPES := {
 
 # patterns[phase] lists the attacks a boss cycles through; phases switch at 66% and 33% health.
 # The first five are chapter guardians, the last five are the story bosses fought in their own arenas.
+# Health follows the bot log of CI run 44913528986: a maxed build stops growing around stage 6, so
+# the curve is flat after that instead of doubling (see HANDOFF.md, "Balance").
 const BOSSES := {
-    "warden": {"hp": 750.0, "speed": 40.0, "r": 20.0, "dmg": 16.0, "look": "armor", "col": Color("5f5a52"), "col2": Color("eecc63"), "bolt": Color("ff7a2a"), "tell": 0.95, "rest": 1.5,
+    "warden": {"hp": 480.0, "speed": 40.0, "r": 20.0, "dmg": 16.0, "look": "armor", "col": Color("5f5a52"), "col2": Color("eecc63"), "bolt": Color("ff7a2a"), "tell": 0.95, "rest": 1.5,
         "patterns": [["ring", "charge"], ["ring", "fan", "charge"], ["ring", "summon", "fan"]]},
     "aragog": {"hp": 2400.0, "speed": 46.0, "r": 26.0, "dmg": 20.0, "look": "spider", "spr": "", "dark": true, "patronus_weak": true, "col": Color("5a403a"), "col2": Color("80483e"), "bolt": Color("ff7a2a"), "tell": 0.95, "rest": 1.3,
         "patterns": [["web", "ring"], ["web", "charge", "ring"], ["summon", "web", "ring", "charge"]]},
-    "hex": {"hp": 4000.0, "speed": 34.0, "r": 26.0, "dmg": 22.0, "look": "hex", "fly": true, "col": Color("15191d"), "col2": Color("47ed5b"), "bolt": Color("5de46a"), "tell": 0.9, "rest": 1.2,
+    "hex": {"hp": 3000.0, "speed": 34.0, "r": 26.0, "dmg": 22.0, "look": "hex", "fly": true, "col": Color("15191d"), "col2": Color("47ed5b"), "bolt": Color("5de46a"), "tell": 0.9, "rest": 1.2,
         "patterns": [["fan", "fan", "summon"], ["ring", "spin", "blink"], ["core", "fan", "ring"]]},
-    "idol": {"hp": 5600.0, "speed": 30.0, "r": 24.0, "dmg": 24.0, "look": "armor", "col": Color("4e6a52"), "col2": Color("e6ce60"), "bolt": Color("5de46a"), "tell": 1.0, "rest": 1.3,
+    "idol": {"hp": 2800.0, "speed": 30.0, "r": 24.0, "dmg": 24.0, "look": "armor", "col": Color("4e6a52"), "col2": Color("e6ce60"), "bolt": Color("5de46a"), "tell": 1.0, "rest": 1.3,
         "patterns": [["fan", "slam"], ["gaze", "slam", "summon"], ["slam", "gaze", "fan", "ring"]]},
-    "greyback": {"hp": 7200.0, "speed": 64.0, "r": 18.0, "dmg": 26.0, "look": "beast", "dark": true, "col": Color("5a554a"), "col2": Color("c8bfa0"), "bolt": Color("ff7a2a"), "tell": 0.8, "rest": 1.1,
+    "greyback": {"hp": 2600.0, "speed": 64.0, "r": 18.0, "dmg": 26.0, "look": "beast", "dark": true, "col": Color("5a554a"), "col2": Color("c8bfa0"), "bolt": Color("ff7a2a"), "tell": 0.8, "rest": 1.1,
         "patterns": [["charge", "charge", "fan"], ["charge", "summon", "charge"], ["charge", "charge", "ring"]]},
-    "quirrell": {"hp": 1700.0, "speed": 46.0, "r": 14.0, "dmg": 18.0, "look": "wizard", "spr": "quirrell", "col": Color("4a3a5a"), "col2": Color("c8a0ff"), "bolt": Color("c45cff"), "tell": 0.9, "rest": 1.3,
+    "quirrell": {"hp": 1500.0, "speed": 46.0, "r": 14.0, "dmg": 18.0, "look": "wizard", "spr": "quirrell", "col": Color("4a3a5a"), "col2": Color("c8a0ff"), "bolt": Color("c45cff"), "tell": 0.9, "rest": 1.3,
         "patterns": [["fan", "twin"], ["twin", "ring", "blink"], ["twin", "spin", "blink", "summon"]]},
-    "basilisk": {"hp": 3400.0, "speed": 48.0, "r": 24.0, "dmg": 22.0, "look": "snake", "spr": "basilisk", "col": Color("4e7a52"), "col2": Color("e6ce60"), "bolt": Color("5de46a"), "tell": 0.95, "rest": 1.2,
+    "basilisk": {"hp": 2900.0, "speed": 48.0, "r": 24.0, "dmg": 22.0, "look": "snake", "spr": "basilisk", "col": Color("4e7a52"), "col2": Color("e6ce60"), "bolt": Color("5de46a"), "tell": 0.95, "rest": 1.2,
         "patterns": [["gaze", "charge"], ["gaze", "web", "charge"], ["gaze", "fan", "charge", "summon"]]},
-    "dementor": {"hp": 5000.0, "speed": 42.0, "r": 22.0, "dmg": 24.0, "look": "dementor", "spr": "dementor", "fly": true, "dark": true, "patronus_weak": true, "col": Color("141a22"), "col2": Color("a4bfce"), "bolt": Color("8ad0ff"), "tell": 0.9, "rest": 1.2,
+    "dementor": {"hp": 3300.0, "speed": 42.0, "r": 22.0, "dmg": 24.0, "look": "dementor", "spr": "dementor", "fly": true, "dark": true, "patronus_weak": true, "col": Color("141a22"), "col2": Color("a4bfce"), "bolt": Color("8ad0ff"), "tell": 0.9, "rest": 1.2,
         "patterns": [["web", "ring"], ["web", "summon", "fan"], ["blink", "ring", "web", "spin"]]},
-    "nagini": {"hp": 6600.0, "speed": 62.0, "r": 20.0, "dmg": 26.0, "look": "snake", "spr": "nagini", "dark": true, "col": Color("3a4a3a"), "col2": Color("9adf7a"), "bolt": Color("5de46a"), "tell": 0.8, "rest": 1.0,
+    "nagini": {"hp": 3600.0, "speed": 62.0, "r": 20.0, "dmg": 26.0, "look": "snake", "spr": "nagini", "dark": true, "col": Color("3a4a3a"), "col2": Color("9adf7a"), "bolt": Color("5de46a"), "tell": 0.8, "rest": 1.0,
         "patterns": [["charge", "fan"], ["charge", "charge", "web"], ["charge", "summon", "charge", "ring"]]},
-    "voldemort": {"hp": 9800.0, "speed": 50.0, "r": 14.0, "dmg": 28.0, "look": "wizard", "spr": "voldemort", "dark": true, "col": Color("1c1a22"), "col2": Color("5de46a"), "bolt": Color("5de46a"), "tell": 0.8, "rest": 1.0,
+    "voldemort": {"hp": 5200.0, "speed": 50.0, "r": 14.0, "dmg": 28.0, "look": "wizard", "spr": "voldemort", "dark": true, "col": Color("1c1a22"), "col2": Color("5de46a"), "bolt": Color("5de46a"), "tell": 0.8, "rest": 1.0,
         "patterns": [["fan", "blink", "twin"], ["spin", "blink", "gaze", "summon"], ["core", "blink", "twin", "breath", "spin"]]},
 }
 

@@ -8,3 +8,14 @@ android/
 *.apk
 *.aab
 *.log
+
+# Android signing material and local secrets (never commit these)
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.base64
+.env
+.env.*

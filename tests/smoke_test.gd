@@ -1,5 +1,5 @@
 extends SceneTree
-## Headless smoke test. A simple bot drives the simulation through all five chapters, then the
+## Headless smoke test. A simple bot drives the simulation through all ten chapters, then the
 ## UI scene is built and every panel is opened once.
 ## Usage: godot --headless --path . -s res://tests/smoke_test.gd
 ## Note: the UI pass writes the normal local save file (user://hex_district.cfg).
@@ -67,8 +67,8 @@ func _on_ended(v: bool) -> void:
 
 
 func _check_data() -> void:
-    if Chapters.LIST.size() != 5:
-        failures.append("expected 5 chapters, found %d" % Chapters.LIST.size())
+    if Chapters.LIST.size() != 10:
+        failures.append("expected 10 chapters, found %d" % Chapters.LIST.size())
     for ch in Chapters.LIST:
         for row in ch.enemies:
             if not Enemies.TYPES.has(row[0]):
@@ -98,14 +98,16 @@ func _mortal_run() -> void:
         failures.append("mortal run: no level-up happened")
 
 
-# Invulnerable bot: must clear all five chapters and reach the victory screen.
+# Invulnerable bot: must clear all ten chapters and reach the victory screen.
 func _full_run() -> void:
     _reset()
     world.invulnerable = true
     world.start_run({})
     var t: float = 0.0
     var boss_t: float = 0.0
-    while not ended and t < 2400.0:
+    # Each chapter gets survival time plus a generous boss allowance before the test force-kills it.
+    var max_sim_time: float = Chapters.LIST.size() * (Chapters.SURVIVE_TIME + 125.0)
+    while not ended and t < max_sim_time:
         world.move_input = Vector2.from_angle(t * 0.6)
         world.step(DT)
         t += DT
@@ -122,8 +124,8 @@ func _full_run() -> void:
     print("[smoke] full run: ended=%s victory=%s chapters_cleared=%d sim_time=%ds level=%d" % [str(ended), str(victory), cleared.size(), int(t), int(world.player.level)])
     if not ended or not victory:
         failures.append("full run did not reach victory")
-    if cleared.size() != 4:
-        failures.append("expected 4 chapter-clear events before the finale, got %d" % cleared.size())
+    if cleared.size() != Chapters.LIST.size() - 1:
+        failures.append("expected %d chapter-clear events before the finale, got %d" % [Chapters.LIST.size() - 1, cleared.size()])
 
 
 func _checkpoint_roundtrip() -> void:

@@ -4,11 +4,11 @@
 
 ## Status
 
-**Current stage:** the repository README documents a playable Godot 4.3 prototype and a CI smoke-test/debug-APK workflow. This documentation task did not independently run the game or build. A production release keystore and signed release pipeline are not configured or verified.
+**Current stage:** playable Godot 4.3 prototype expanded to a data-driven ten-chapter campaign with pseudo-3D gameplay silhouettes and a high-resolution master visual kit. A production release keystore and signed release pipeline are not configured or verified. The Godot executable was not installed in this workspace during the latest session, so the ten-chapter smoke test remains unrun locally.
 
 **Repository:** https://github.com/Vano3667/HPGTA-Game — private GitHub repository, `main` branch. The repo includes the game prototype, English design/prompt docs, visual references, and the new Android signing guide.
 
-**Next development step:** keep the existing debug CI workflow intact. Configure the four repository Actions secrets with the release keystore and credential values through GitHub settings, then implement and verify a separate release-signed build. Do not request or store those values in chat or committed files.
+**Next development step:** install/use Godot 4.3 in a capable environment and run `godot --headless --path . -s res://tests/smoke_test.gd`; fix any parser or simulation issue found. Then create cleaned individual runtime sprite exports from `assets/visual-kit/` without replacing the immutable masters. Keep the existing debug CI workflow intact; release-signing work remains a separate later task.
 
 ## Approved Brief
 
@@ -17,7 +17,7 @@
 - Inspiration: one-thumb movement/automatic survival attacks as in the Vampire Survivors genre; dense top-down shooter/survival crowd patterns from Crimsonland; compact gritty city-map composition from the user's GTA2 references.
 - **Controls:** one hand, one thumb. Bottom screen safe-area movement zone; free character movement across the entire arena; wand and spells automatically attack; no required manual aim/shoot, second thumb or twin-stick input.
 - Use recognizable Harry Potter fan-game canon/locations as the user requested. Keep mechanics, compositions, sprites, HUD and scene layouts original and verify use rights before any commercial release.
-- Five chapters: Diagon Alley, Hogwarts Courtyard, Forbidden Forest, Quidditch Pitch, Ministry of Magic / Department of Mysteries.
+- Ten chapters: Diagon Alley, Hogwarts Courtyard, Forbidden Forest, Quidditch Pitch, Ministry of Magic / Department of Mysteries, Hogsmeade, Serpent Vault, Midnight Crossroads, Storm Prison and Astronomy Tower.
 - Coding agents are required to work end-to-end autonomously without requesting choices or approvals, and to keep this file updated after each session.
 
 ## Art and References
@@ -30,13 +30,14 @@
 - `refs/05_ministry_battle.svg` — overhead Ministry battle board.
 - `refs/character_harry_topdown.svg` — Harry player sprite direction/silhouette sheet.
 - `refs/enemies_topdown.svg` — eight top-down enemy concept designs.
+- `assets/visual-kit/` — generated high-resolution pseudo-3D master PNGs: 10 location keyframes and hero/core/expansion enemy atlases. See `assets/visual-kit/VISUAL_BIBLE.md` before editing or exporting them.
 - `refs/archive_previous/` — earlier, cleaner diagrams, preserved as obsolete historical references. Do not use them as the main visual direction; matching obsolete files were removed from the repository root `refs/` folder.
 
 The new SVGs are hand-authored vector concept boards, not outputs from a configured image-generation model, not playable scenes and not production sprite assets. The image-generation provider was unavailable in this session; attempted delegated image work did not complete, so the references were drawn directly as SVGs. All 12 SVG files (seven current boards plus five archived diagrams) passed XML parsing. Browser screenshot rendering was attempted but failed with OS access/IPC errors; import/render in a capable SVG/game engine remains unverified. Don't report raster-tested or in-engine validation.
 
 ## Character and Enemy Direction
 
-Harry: recognizable from the overhead silhouette through round glasses, dark hair, lightning scar, red/gold Gryffindor scarf, dark robe and wand direction. The sheet currently documents four cardinal directions and a larger silhouette breakdown; don't claim a complete 8-direction sprite animation is finished.
+Hero: recognizable from the overhead silhouette through round glasses, dark hair, lightning scar, red/gold trim, dark robe and wand direction. `assets/visual-kit/sprites/hero-wizard-pseudo3d-atlas.png` is a high-resolution eight-pose master (four aim + four run poses); it is visual source material, not yet a cleaned runtime animation.
 
 Enemy sheet currently outlines: Aragog/giant spider, Dementor, Death Eater, animated armor, Inferi, Cornish pixie, werewolf and basilisk. Each final sprite should retain a readable overhead collision silhouette and distinct movement/attack telegraph.
 
@@ -81,5 +82,14 @@ Enemy sheet currently outlines: Aragog/giant spider, Dementor, Death Eater, anim
 ### 2026-11-21 — fan-game visual direction revision
 
 - **User request:** use the GTA2-like screenshots and Crimsonland as examples; keep supplied screenshots for future reference; add top-down character and enemy designs; recognizable Harry Potter elements are required; handle failed agents independently.
-- **Decisions:** preserve canon as fan-game content; set Harry as main playable character, familiar spells/creatures/locations; compose five campaign arenas from source screenshots' overhead street/survival readability; maintain the one-thumb automatic-combat loop from earlier approved revision.
+- **Decisions:** preserve canon as fan-game content; set Harry as main playable character, familiar spells/creatures/locations; compose the original five campaign arenas from source screenshots' overhead street/survival readability; maintain the one-thumb automatic-combat loop from earlier approved revision.
 - **Next:** continue autonomous game implementation; read this HANDOFF and the concept first, make engine/design choices independently, and record actual progress here.
+
+### 2026-11-21 — pseudo-3D art and ten-chapter campaign expansion
+
+- **User request:** remake the game in pseudo-3D; redesign hero and enemy sprites in high quality; create reusable high-quality asset references; develop locations more deeply and raise the total to ten.
+- **Created master art:** `assets/visual-kit/locations/01-...10-*.png` (ten portrait pseudo-3D arena keyframes); `sprites/hero-wizard-pseudo3d-atlas.png`; `sprites/enemies-core-pseudo3d-atlas.png`; `sprites/enemies-expansion-pseudo3d-atlas.png`; and `assets/visual-kit/VISUAL_BIBLE.md` with exact production/export guidance. The built-in image generator was used. Masters must not be downscaled destructively or overwritten.
+- **Gameplay changed:** added chapters 6–10 in `scripts/data/chapters.gd`; added 10 enemy types and five bosses in `scripts/data/enemies.gd`; added village/vault/crossroads/prison/tower layouts plus pseudo-3D obstacle rendering in `scripts/game/world.gd`; added five distinct hazard patterns in `scripts/game/director.gd`; upgraded hero/enemy procedural art and added expansion silhouettes in `scripts/game/art.gd`; made UI/save chapter totals dynamic; updated the smoke test to require ten chapters.
+- **Documentation changed:** README and CONCEPT now describe the ten-chapter campaign and visual kit.
+- **Checks:** assets were verified present with 13 PNG files (ten locations + three sprite atlases), each roughly 2.2–3.7 MB. `godot` was not found on PATH, therefore no runtime/smoke/APK claim is valid. Static validation and Git diff review remain required after this handoff entry.
+- **Next:** run the ten-chapter smoke test in Godot 4.3, inspect all new procedural layouts in a running build, and turn visual masters into cleaned transparent runtime sprite animations as a dedicated art pass.

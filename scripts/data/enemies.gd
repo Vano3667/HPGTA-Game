@@ -24,6 +24,16 @@ const TYPES := {
     "deatheater": {"hp": 60.0, "speed": 40.0, "r": 8.0, "dmg": 13.0, "xp": 5, "ai": "ranged", "look": "wizard", "col": Color("171a1c"), "col2": Color("5de46a"), "bolt": Color("5de46a")},
     "echo": {"hp": 30.0, "speed": 82.0, "r": 7.0, "dmg": 8.0, "xp": 2, "ai": "weave", "look": "echo", "col": Color("6fa8c8"), "col2": Color("c4e8e7")},
     "construct": {"hp": 130.0, "speed": 34.0, "r": 12.0, "dmg": 16.0, "xp": 7, "ai": "charge", "look": "armor", "col": Color("4a4436"), "col2": Color("d6b85a")},
+    "frostwitch": {"hp": 52.0, "speed": 40.0, "r": 9.0, "dmg": 12.0, "xp": 4, "ai": "ranged", "look": "wizard", "col": Color("52677d"), "col2": Color("8edbff"), "bolt": Color("bfefff")},
+    "icegolem": {"hp": 105.0, "speed": 29.0, "r": 12.0, "dmg": 15.0, "xp": 5, "ai": "chase", "look": "golem", "col": Color("8eaec3"), "col2": Color("e6fbff")},
+    "serpent": {"hp": 45.0, "speed": 72.0, "r": 9.0, "dmg": 11.0, "xp": 3, "ai": "weave", "look": "serpent", "col": Color("485d47"), "col2": Color("77ec9b")},
+    "cultist": {"hp": 45.0, "speed": 43.0, "r": 8.0, "dmg": 12.0, "xp": 4, "ai": "ranged", "look": "wizard", "col": Color("30443c"), "col2": Color("54e39a"), "bolt": Color("54e39a")},
+    "wisp": {"hp": 36.0, "speed": 88.0, "r": 7.0, "dmg": 9.0, "xp": 3, "ai": "weave", "look": "wisp", "col": Color("5da99c"), "col2": Color("c7fff1")},
+    "shadecarriage": {"hp": 82.0, "speed": 32.0, "r": 12.0, "dmg": 15.0, "xp": 5, "ai": "chase", "look": "coach", "col": Color("382d49"), "col2": Color("c45cff")},
+    "owl": {"hp": 30.0, "speed": 94.0, "r": 7.0, "dmg": 8.0, "xp": 3, "ai": "weave", "look": "owl", "col": Color("5e536f"), "col2": Color("a9d6ff")},
+    "prisoner": {"hp": 42.0, "speed": 66.0, "r": 8.0, "dmg": 10.0, "xp": 3, "ai": "chase", "look": "inferi", "col": Color("617078"), "col2": Color("91d9dd")},
+    "sentinel": {"hp": 115.0, "speed": 31.0, "r": 12.0, "dmg": 16.0, "xp": 6, "ai": "charge", "look": "gargoyle", "col": Color("526168"), "col2": Color("72e2dd")},
+    "gargoyle": {"hp": 72.0, "speed": 58.0, "r": 10.0, "dmg": 14.0, "xp": 5, "ai": "charge", "look": "gargoyle", "col": Color("615c70"), "col2": Color("b5a7ff")},
 }
 
 # patterns[phase] lists the attacks a boss cycles through; phases switch at 66% and 33% health.
@@ -52,6 +62,31 @@ const BOSSES := {
         "name": "The Hex Disturbance", "hp": 8000.0, "speed": 34.0, "r": 28.0, "dmg": 26.0, "look": "hex",
         "col": Color("15191d"), "col2": Color("47ed5b"), "bolt": Color("5de46a"), "tell": 0.9, "rest": 1.2, "patronus_weak": false,
         "patterns": [["fan", "fan", "summon"], ["ring", "spin", "fan"], ["core", "fan", "ring"]],
+    },
+    "frostmaiden": {
+        "name": "The Frost Maiden", "hp": 9800.0, "speed": 38.0, "r": 22.0, "dmg": 28.0, "look": "wizard",
+        "col": Color("58728c"), "col2": Color("d9f6ff"), "bolt": Color("bfefff"), "tell": 0.92, "rest": 1.2, "patronus_weak": false,
+        "patterns": [["fan", "ring"], ["fan", "summon", "ring"], ["spin", "fan", "charge"]],
+    },
+    "basilisk": {
+        "name": "The Vault Serpent", "hp": 11800.0, "speed": 50.0, "r": 30.0, "dmg": 30.0, "look": "serpent",
+        "col": Color("405b45"), "col2": Color("86ef9f"), "bolt": Color("54e39a"), "tell": 0.9, "rest": 1.1, "patronus_weak": false,
+        "patterns": [["charge", "ring"], ["summon", "fan", "charge"], ["spin", "charge", "fan"]],
+    },
+    "nightcoach": {
+        "name": "The Night Coach", "hp": 13800.0, "speed": 44.0, "r": 28.0, "dmg": 32.0, "look": "coach",
+        "col": Color("36294a"), "col2": Color("d086ff"), "bolt": Color("c45cff"), "tell": 0.88, "rest": 1.05, "patronus_weak": false,
+        "patterns": [["charge", "fan"], ["ring", "charge", "summon"], ["spin", "charge", "fan"]],
+    },
+    "jailer": {
+        "name": "The Black Tide Jailer", "hp": 16000.0, "speed": 35.0, "r": 30.0, "dmg": 35.0, "look": "gargoyle",
+        "col": Color("425967"), "col2": Color("8ae9e5"), "bolt": Color("62e7ea"), "tell": 0.94, "rest": 1.1, "patronus_weak": false,
+        "patterns": [["slam", "fan"], ["summon", "ring", "slam"], ["spin", "fan", "charge"]],
+    },
+    "astromancer": {
+        "name": "The Storm Astromancer", "hp": 19000.0, "speed": 42.0, "r": 25.0, "dmg": 38.0, "look": "wizard",
+        "col": Color("484064"), "col2": Color("c4b8ff"), "bolt": Color("9c86ff"), "tell": 0.86, "rest": 1.0, "patronus_weak": false,
+        "patterns": [["fan", "ring"], ["spin", "summon", "fan"], ["charge", "spin", "ring"]],
     },
 }
 

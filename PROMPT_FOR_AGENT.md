@@ -32,7 +32,7 @@ Use the user's requested recognizable Harry Potter universe canon as fan-game co
 - Read and compare the assets in `refs/source_examples/` before drawing. These were specifically supplied by the user as persistent style references; keep them in the repo and do not replace them with recreated approximations.
 - Match a readable, nearly straight-down overhead game camera. Do not switch to cinematic illustration or 45-degree isometric views.
 - Desired rendering: low-res/crunchy game texture, dark muddy urban/forest environments, compact road/corridor clutter, tight combat arenas, small character/enemy sprites, simple side HUD, and vivid but limited spell flashes and projectile trails.
-- Use the new five fan-game scene boards: Diagon Alley, Hogwarts Courtyard, Forbidden Forest, Quidditch Pitch and Ministry Department of Mysteries.
+- Use the ten-chapter visual direction: the five original fan-game scene boards and the high-resolution pseudo-3D masters under `assets/visual-kit/`. Read `assets/visual-kit/VISUAL_BIBLE.md` before extracting or generating any runtime art.
 - Use `refs/character_harry_topdown.svg` for the player silhouette and `refs/enemies_topdown.svg` for overhead enemy size/shape language.
 - All gameplay sprites must read at Android scale from above: distinct outlines, clear faction effects, and sensible collision footprints. Scene SVGs and sprite sheets are design references, not a promise that the game already has final art.
 
@@ -42,10 +42,10 @@ Use the user's requested recognizable Harry Potter universe canon as fan-game co
 2. Move using the bottom thumb control; attacks and spell systems automatically target eligible enemies.
 3. Defeat enemies, gather XP and level up. Pause combat and pick one of three large upgrade cards.
 4. Build a combination of wand attacks, defensive orbit, Patronus, fire, frost, familiar and passive effects.
-5. Clear five locations in order; each has its own hazard, enemy mix and boss.
+5. Clear ten locations in order; each has its own hazard, enemy mix and boss.
 6. Show clear defeat/victory summaries and allow a fast restart. Keep save data local.
 
-Implement the five campaign chapters and their bosses as in `CONCEPT.md`: Diagon Alley, Hogwarts Courtyard, Forbidden Forest, Quidditch Pitch and Ministry Department of Mysteries. Include actual varied gameplay, not just five menu selections pointing to the same arena.
+Implement all ten campaign chapters and their bosses as in `CONCEPT.md`. Include actual varied gameplay, not just menu selections pointing to the same arena.
 
 ## Combat/Systems
 
@@ -65,7 +65,7 @@ Implement the five campaign chapters and their bosses as in `CONCEPT.md`: Diagon
 - No required online services, analytics, tracking, ads, purchases or account.
 - Test launch, input, auto-fire, pause, upgrades, transitions, restart and save/load to the extent possible.
 - Build an Android APK if available. Otherwise deliver a runnable alternative, exact export/build steps and truthful limitations.
-- Continue through all five chapters and finish with run/build instructions, tests/results and a complete handoff. Don't stop to ask questions if a choice can be made from this brief.
+- Continue through all ten chapters and finish with run/build instructions, tests/results and a complete handoff. Don't stop to ask questions if a choice can be made from this brief.
 
 ## Android Release Signing and Update Compatibility
 
@@ -79,7 +79,7 @@ Implement the five campaign chapters and their bosses as in `CONCEPT.md`: Diagon
 
 ## Completion Checklist
 
-- [ ] Five playable chapters, each with unique enemies/hazard/boss.
+- [ ] Ten playable chapters, each with unique enemies/hazard/boss.
 - [ ] Bottom-screen one-thumb movement works; player can traverse full arena.
 - [ ] Wand and spells automatically fire/target; no mandatory manual fire/aim.
 - [ ] XP pickups, upgrade cards, progression, spell synergies and survival pressure work.
@@ -92,4 +92,4 @@ Implement the five campaign chapters and their bosses as in `CONCEPT.md`: Diagon
 
 ## Short Continuation Prompt
 
-“Read `HANDOFF.md`, `CONCEPT.md` and `PROMPT_FOR_AGENT.md`. Continue implementing the full game from the handoff's next action. Work autonomously: do not ask the user questions or wait for preferences. Infer sensible defaults, record major choices and checks in `HANDOFF.md`, preserve unrelated work, and continue through all five chapters. Update `HANDOFF.md` with actual changes, tests, limitations and the next concrete step before ending.”
+“Read `HANDOFF.md`, `CONCEPT.md`, `PROMPT_FOR_AGENT.md` and `assets/visual-kit/VISUAL_BIBLE.md`. Continue implementing the full game from the handoff's next action. Work autonomously: do not ask the user questions or wait for preferences. Infer sensible defaults, record major choices and checks in `HANDOFF.md`, preserve unrelated work, and continue through all ten chapters. Update `HANDOFF.md` with actual changes, tests, limitations and the next concrete step before ending.”

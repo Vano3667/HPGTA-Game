@@ -132,7 +132,7 @@ func _draw() -> void:
         _text(Vector2(x0 + 5.0, y), "%s %d" % [p_name, int(p.passives[id])], 10, C_GOLD)
         y += 13.0
 
-    _text(Vector2(8.0, top + 16.0), "%d/5 %s" % [int(world.chapter_index) + 1, str(world.chapter.name)], 12, C_GOLD)
+    _text(Vector2(8.0, top + 16.0), "%d/%d %s" % [int(world.chapter_index) + 1, Chapters.LIST.size(), str(world.chapter.name)], 12, C_GOLD)
     if world.boss != null:
         var bw: float = x0 - 16.0
         var k: float = clampf(float(world.boss.hp) / float(world.boss.max_hp), 0.0, 1.0)
@@ -223,7 +223,7 @@ func _card(c: Dictionary) -> Button:
 func show_menu() -> void:
     var box: VBoxContainer = _panel("HEX DISTRICT", "A Harry Potter fan-game survival roguelite", false)
     var d: Dictionary = save.data
-    box.add_child(_label("Runs %d   Wins %d   Best chapter %d/5   Most defeated %d" % [int(d.runs), int(d.wins), int(d.best_chapter), int(d.best_kills)], 12, C_DIM))
+    box.add_child(_label("Runs %d   Wins %d   Best chapter %d/%d   Most defeated %d" % [int(d.runs), int(d.wins), int(d.best_chapter), Chapters.LIST.size(), int(d.best_kills)], 12, C_DIM))
     var cp: Dictionary = d.get("checkpoint", {})
     if not cp.is_empty():
         var idx: int = clampi(int(cp.get("chapter", 0)), 0, Chapters.LIST.size() - 1)
@@ -265,7 +265,7 @@ func show_summary(victory: bool) -> void:
     var sub: String = "The Hex District is quiet again." if victory else "The disturbance spreads. Try another build."
     var box: VBoxContainer = _panel(title, sub, true)
     var secs: int = int(world.run_time)
-    box.add_child(_label("Chapter %d/5 - %s" % [int(world.chapter_index) + 1, str(world.chapter.name)], 16, C_TEXT))
+    box.add_child(_label("Chapter %d/%d - %s" % [int(world.chapter_index) + 1, Chapters.LIST.size(), str(world.chapter.name)], 16, C_TEXT))
     box.add_child(_label("Time %d:%02d   Level %d   Defeated %d" % [int(secs / 60.0), secs % 60, int(world.player.level), int(world.kills)], 14, C_TEXT))
     box.add_child(_button("RESTART", func(): start_requested.emit(false)))
     box.add_child(_button("MENU", func(): menu_requested.emit()))

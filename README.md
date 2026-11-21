@@ -8,9 +8,9 @@ The repository now contains a **playable Godot 4.3 prototype** next to the origi
 
 - Engine: Godot 4.3 (GDScript, GL Compatibility renderer), portrait 480x854 low-resolution viewport scaled up for a crunchy look.
 - One thumb only: touch the lower 60% of the screen and drag to move; every spell targets and fires by itself. Keyboard WASD/arrows work on desktop as a test aid.
-- Five chapters in order, each with its own layout, enemy mix, hazard and boss: Diagon Alley, Hogwarts Courtyard, Forbidden Forest, Quidditch Pitch, Ministry of Magic.
+- Ten chapters in order, each with its own layout, enemy mix, hazard and boss. The campaign expands past the original five with Hogsmeade, Serpent Vault, Midnight Crossroads, Storm Prison and Astronomy Tower.
 - Eight automatic spells, six passives, three evolutions, XP pickups with a magnet radius, three-card level-up screen, pause, settings, local save with a per-chapter checkpoint.
-- All sprites are drawn in code from primitives; there are no imported art or audio files yet.
+- Gameplay silhouettes are drawn in code for fast mobile swarms. High-resolution pseudo-3D hero, enemy and location masters are provided in [`assets/visual-kit/`](assets/visual-kit/) for production animation and export work.
 
 ### Run it
 
@@ -21,7 +21,7 @@ The repository now contains a **playable Godot 4.3 prototype** next to the origi
 
 The `build` GitHub Actions workflow (`.github/workflows/build.yml`) runs on every push to `main` that touches code:
 
-1. imports the project and runs the headless smoke test (`tests/smoke_test.gd`, a bot plays all five chapters);
+1. imports the project and runs the headless smoke test (`tests/smoke_test.gd`, a bot plays all ten chapters);
 2. exports a debug APK and uploads it as the `hex-district-debug-apk` artifact of the run (Actions tab -> latest `build` run -> Artifacts).
 
 The APK is currently a debug build signed with the CI debug keystore. It is for testing only and is not the release signing identity for users' future app updates. Run the smoke test locally with:
@@ -40,7 +40,8 @@ For release signing, set up the persistent signing key as GitHub Actions secrets
 | `scripts/game/world.gd` | Simulation step, collisions, arena layouts, world rendering |
 | `scripts/game/arsenal.gd` | Automatic spells |
 | `scripts/game/director.gd` | Waves, elites, chapter hazards, boss patterns |
-| `scripts/game/art.gd` | Code-drawn Harry and enemy sprites |
+| `scripts/game/art.gd` | Pseudo-3D code-drawn hero and enemy gameplay silhouettes |
+| `assets/visual-kit/` | High-resolution pseudo-3D master art plus production handoff |
 | `scripts/data/*.gd` | Chapters, enemies/bosses, spells/passives/evolutions |
 | `scripts/ui/*.gd` | One-thumb joystick, HUD strip and menu panels |
 | `scripts/core/*.gd` | Local save and procedural sound effects |
@@ -50,7 +51,7 @@ See [HANDOFF.md](HANDOFF.md) for the verified status, known limits and next step
 
 ## Design and Agent Brief
 
-- [CONCEPT.md](CONCEPT.md) — game concept, world, spells, survival loop and five campaign chapters.
+- [CONCEPT.md](CONCEPT.md) — game concept, world, spells, survival loop and ten campaign chapters.
 - [PROMPT_FOR_AGENT.md](PROMPT_FOR_AGENT.md) — autonomous implementation prompt; the coding agent is told not to ask the user to make project decisions.
 - [HANDOFF.md](HANDOFF.md) — persistent status, verified work and next implementation action.
 - [ANDROID_SIGNING.md](ANDROID_SIGNING.md) — permanent Android release-signing key, GitHub Actions secrets and in-place update requirements.

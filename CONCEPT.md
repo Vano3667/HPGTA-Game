@@ -18,7 +18,7 @@ The player controls Harry Potter from a near-vertical overhead view. One thumb m
 
 - Android phones/tablets, portrait-first.
 - One hand / one thumb only during combat.
-- 20–30 minute campaign target, five authored chapters, with shorter practice runs possible.
+- 35–45 minute campaign target, ten authored chapters, with shorter practice runs possible.
 - Local/offline first. No mandatory account, ads, analytics, network or purchases in the prototype.
 - Automatic attacks are the default and cannot be replaced by a required manual-aim scheme.
 
@@ -63,7 +63,7 @@ After a magical disturbance spreads through London and Hogwarts, familiar wards 
 - Avoid filling the entire screen with indistinguishable particles. Preserve safe movement paths.
 - Bosses telegraph before jumps, sweeps, charges and area attacks. Use audio cues and shape, not color alone.
 
-## Five Campaign Chapters
+## Ten Campaign Chapters
 
 ### 1. Diagon Alley — “Curfew on the Alley”
 
@@ -105,11 +105,51 @@ After a magical disturbance spreads through London and Hogwarts, familiar wards 
 - Boss: **The Hex Disturbance**, three phases: green curse fans, blue-white defensive rings, and a final exposed seal core.
 - Reference: `refs/05_ministry_battle.svg`.
 
+### 6. Hogsmeade — “Frost on the High Street”
+
+- Snowbound village crossroads with frozen cobble, warm shop windows and clear lane loops around a central ice patch.
+- Enemies: frost witches, ice golems, pixies and centaur skirmishers.
+- Hazard: a glassy frost circle is announced before it slows and damages; the surrounding roads remain viable.
+- Boss: **The Frost Maiden**, alternating fan curses, summons and rings with an obvious gap.
+- Reference: `assets/visual-kit/locations/06-frost-village.png`.
+
+### 7. Serpent Vault — “Below the Old Temple”
+
+- Sunken temple chambers, toxic rune water, broken statues and a circular boss dais linked by flanking paths.
+- Enemies: cave serpents, ward cultists, Inferi and emerald wisps.
+- Hazard: offset venom seams leave a deliberate diagonal escape gap.
+- Boss: **The Vault Serpent**, a charging boss that scatters rings and calls smaller serpents.
+- Reference: `assets/visual-kit/locations/07-serpent-vault.png`.
+
+### 8. Midnight Crossroads — “Last Carriage Out”
+
+- Rainy city junction with four wet streets, transit rails, lamp posts and luggage cover.
+- Enemies: carriage shades, masked wizards, cursed sports balls and lightning owls.
+- Hazard: violet rail charges announce their avenue well before striking.
+- Boss: **The Night Coach**, a charging spectral carriage with visible turn and summon phases.
+- Reference: `assets/visual-kit/locations/08-midnight-crossroads.png`.
+
+### 9. Storm Prison — “Break the Black Tide”
+
+- Flooded island prison yard with cell loops, bridges and a central drain.
+- Enemies: drowned prisoners, Dementors, sea wisps and security sentinels.
+- Hazard: a slow tide sweeps one side of the yard while a dry escape route remains.
+- Boss: **The Black Tide Jailer**, with slams, ring attacks and prison-guard reinforcements.
+- Reference: `assets/visual-kit/locations/09-storm-prison.png`.
+
+### 10. Astronomy Tower — “Storm Above the Clouds”
+
+- An open tower platform with a brass orrery, radial routes, broken parapets and lightning rods.
+- Enemies: gargoyles, storm owls, constructs and frost witches.
+- Hazard: a lightning cross marks the floor but preserves diagonal exits.
+- Boss: **The Storm Astromancer**, the campaign finale with fan, ring, summon and charge patterns.
+- Reference: `assets/visual-kit/locations/10-astronomy-tower.png`.
+
 ## Art Direction
 
 - Use the user-provided screenshots in `refs/source_examples/` as style anchors: compact top-down composition, rough low-resolution texture, dirty green/brown/grey palette, readable right-edge HUD, dense crowds and strong spell trails.
 - Use the GTA 2 references for urban density, street/vehicle clutter and map readability; use the Crimsonland references for swarm density, automatic projectile patterns, gore-free impact marks, XP pressure and ring-shaped attacks.
-- The five authored SVGs are layout/style boards, not final raster sprites. The character and enemy sheets specify the strict overhead silhouettes required for gameplay scale.
+- The original five SVGs and the ten high-resolution PNG masters in `assets/visual-kit/` are layout/style references, not final runtime tiles. The character and enemy sheets specify the strict overhead silhouettes required for gameplay scale.
 - Do not use a cinematic isometric camera. The camera must read as nearly vertical overhead and keep the player's movement lane visible.
 
 ## Required Concept Art

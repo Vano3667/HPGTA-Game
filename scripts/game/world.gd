@@ -768,6 +768,63 @@ func _build_layout() -> void:
                 _rect(Rect2(fire_x - 42.0, a.y - 74.0, 84.0, 60.0), Color("121619"))
                 _dot(Vector2(fire_x, a.y - 44.0), 12.0, accent)
             _label(Vector2(c.x - 78.0, c.y - 344.0), "HALL OF PROPHECY", Color("bfc8d4"))
+        "village":
+            # Snow village: a broad frozen junction and four loopable streets, never a dead end.
+            _rect(Rect2(c.x - 190.0, 0.0, 380.0, a.y), Color("c4d3e0"))
+            _rect(Rect2(0.0, c.y - 165.0, a.x, 330.0), Color("c4d3e0"))
+            _ring(c, 178.0, edge)
+            for sx in [-1.0, 1.0]:
+                for sy in [-1.0, 1.0]:
+                    var house := Vector2(c.x + sx * 370.0, c.y + sy * 500.0)
+                    obstacles.append(Rect2(house - Vector2(125.0, 82.0), Vector2(250.0, 164.0)))
+                    _dot(house + Vector2(-70.0, -56.0), 5.0, accent)
+            for i in 12:
+                var crate := Vector2(lr.randf_range(130.0, a.x - 130.0), lr.randf_range(130.0, a.y - 130.0))
+                if crate.distance_to(c) > 220.0:
+                    obstacles.append(Rect2(crate, Vector2(26.0, 26.0)))
+        "vault":
+            # The serpent vault keeps a boss platform in the centre and wide flanking corridors.
+            _ring(c, 340.0, edge)
+            _ring(c, 205.0, accent)
+            _ring(c, 104.0, edge)
+            for sx in [-1.0, 1.0]:
+                obstacles.append(Rect2(c.x + sx * 470.0 - 62.0, c.y - 330.0, 124.0, 660.0))
+                for sy in [-1.0, 1.0]:
+                    obstacles.append(Rect2(c.x + sx * 270.0 - 110.0, c.y + sy * 560.0 - 36.0, 220.0, 72.0))
+            for i in 10:
+                _dot(c + Vector2.from_angle(TAU * i / 10.0) * 250.0, 4.0, accent)
+        "crossroads":
+            # Four wet lanes meet at an open rune intersection. Bollards shape the corners.
+            _rect(Rect2(c.x - 155.0, 0.0, 310.0, a.y), Color("45465a"))
+            _rect(Rect2(0.0, c.y - 155.0, a.x, 310.0), Color("45465a"))
+            _ring(c, 130.0, accent)
+            for sx in [-1.0, 1.0]:
+                for sy in [-1.0, 1.0]:
+                    var corner := c + Vector2(sx * 330.0, sy * 330.0)
+                    obstacles.append(Rect2(corner - Vector2(118.0, 72.0), Vector2(236.0, 144.0)))
+                    for i in 3:
+                        _dot(corner + Vector2(sx * 138.0, -48.0 + i * 48.0), 4.0, accent)
+        "prison":
+            # Flooded prison yard: central drain, two cell loops and short bridge choke points.
+            _ring(c, 290.0, edge)
+            _ring(c, 100.0, accent)
+            for sx in [-1.0, 1.0]:
+                obstacles.append(Rect2(c.x + sx * 390.0 - 130.0, c.y - 360.0, 260.0, 160.0))
+                obstacles.append(Rect2(c.x + sx * 390.0 - 130.0, c.y + 200.0, 260.0, 160.0))
+                obstacles.append(Rect2(c.x + sx * 500.0 - 35.0, c.y - 110.0, 70.0, 220.0))
+            for i in 8:
+                _dot(c + Vector2.from_angle(TAU * i / 8.0) * 214.0, 5.0, accent)
+        "tower":
+            # A raised ring platform. Broken parapets are cover, the middle stays readable.
+            _ring(c, 430.0, edge)
+            _ring(c, 330.0, Color("716887"))
+            _ring(c, 145.0, accent)
+            for i in 6:
+                var ang: float = TAU * i / 6.0
+                var block := c + Vector2.from_angle(ang) * 300.0
+                obstacles.append(Rect2(block - Vector2(52.0, 35.0), Vector2(104.0, 70.0)))
+                _dot(block, 5.0, accent)
+            _frame(Rect2(c - Vector2(95.0, 95.0), Vector2(190.0, 190.0)), edge)
 
 
 # A 64 px noisy tile gives the crunchy low-res ground; it is repeated across the arena.
@@ -822,9 +879,13 @@ func _draw() -> void:
         var rect: Rect2 = o
         if not view.intersects(rect):
             continue
-        draw_rect(rect, prop)
+        # A dark offset, a side lip and a smaller top face give all collision props a
+        # compact pseudo-3D volume while retaining their honest rectangular hitboxes.
+        draw_rect(Rect2(rect.position + Vector2(3.0, 5.0), rect.size), prop2.darkened(0.45))
+        draw_rect(rect, prop.darkened(0.18))
         if rect.size.x > 24.0 and rect.size.y > 24.0:
-            draw_rect(rect.grow(-7.0), prop2)
+            draw_rect(Rect2(rect.position + Vector2(2.0, 1.0), rect.size - Vector2(8.0, 8.0)), prop2)
+            draw_line(rect.position + Vector2(5.0, 5.0), Vector2(rect.end.x - 5.0, rect.position.y + 5.0), prop.lightened(0.25), 1.0)
         draw_rect(rect, edge, false, 2.0)
     for d in decor:
         match d.kind:

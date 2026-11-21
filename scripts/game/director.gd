@@ -225,6 +225,34 @@ func _make_hazard(hz: Dictionary) -> void:
             # Ministry: a prophecy orb glows, then bursts in a cross of lines.
             var c := Vector2(pp.x + rng.randf_range(-60.0, 60.0), pp.y + rng.randf_range(-60.0, 60.0))
             h.rects = [Rect2(c.x - 300.0, c.y - 17.0, 600.0, 34.0), Rect2(c.x - 17.0, c.y - 300.0, 34.0, 600.0)]
+        "frost":
+            # Hogsmeade: a glassy ice circle slows first, then bites for a short moment.
+            h.pos = pp + Vector2(rng.randf_range(-120.0, 120.0), rng.randf_range(-120.0, 120.0))
+            h.r = 104.0
+            h.slow = true
+        "venom":
+            # Vault: two offset venom seams leave a deliberate diagonal gap.
+            var vx: float = pp.x + rng.randf_range(-80.0, 80.0)
+            var vy: float = pp.y + rng.randf_range(-80.0, 80.0)
+            h.rects = [Rect2(vx - 230.0, vy - 46.0, 180.0, 42.0), Rect2(vx + 50.0, vy + 4.0, 180.0, 42.0)]
+            h.slow = true
+        "rail":
+            # Crossroads: a purple rail charge races through one avenue; side alleys remain open.
+            if rng.randf() < 0.5:
+                h.rects = [Rect2(pp.x - 34.0, pp.y - 430.0, 68.0, 860.0)]
+            else:
+                h.rects = [Rect2(pp.x - 430.0, pp.y - 34.0, 860.0, 68.0)]
+        "tide":
+            # Prison: a wave sweeps half the yard, clearly leaving the other side dry.
+            var from_top: bool = rng.randf() < 0.5
+            var ty: float = pp.y - 380.0 if from_top else pp.y + 220.0
+            h.rects = [Rect2(pp.x - 430.0, ty, 860.0, 160.0)]
+            h.vel = Vector2(0.0, 95.0 if from_top else -95.0)
+            h.slow = true
+        "storm":
+            # Tower: lightning marks a small cross around the player but preserves diagonal exits.
+            var sc := pp + Vector2(rng.randf_range(-90.0, 90.0), rng.randf_range(-90.0, 90.0))
+            h.rects = [Rect2(sc.x - 160.0, sc.y - 16.0, 320.0, 32.0), Rect2(sc.x - 16.0, sc.y - 160.0, 32.0, 320.0)]
     w.add_hazard(h)
     w.sound.emit("warn")
 

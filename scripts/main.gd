@@ -6,6 +6,7 @@ const HudScript = preload("res://scripts/ui/hud.gd")
 const StickScript = preload("res://scripts/ui/joystick.gd")
 const SaveScript = preload("res://scripts/core/save.gd")
 const SfxScript = preload("res://scripts/core/sfx.gd")
+const Chapters = preload("res://scripts/data/chapters.gd")
 
 var save
 var sfx
@@ -130,7 +131,7 @@ func _on_run_ended(victory: bool) -> void:
     d["checkpoint"] = {}
     if victory:
         d["wins"] = int(d["wins"]) + 1
-        d["best_chapter"] = 5
+        d["best_chapter"] = Chapters.LIST.size()
     else:
         d["best_chapter"] = maxi(int(d["best_chapter"]), int(world.chapter_index))
     save.save_data()

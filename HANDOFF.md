@@ -4,11 +4,11 @@
 
 ## Status
 
-**Current stage:** English fan-game concept, five custom scene boards, overhead character/enemy sheets and eight preserved style-reference screenshots are prepared. No playable game/engine project or APK exists yet.
+**Current stage:** the repository README documents a playable Godot 4.3 prototype and a CI smoke-test/debug-APK workflow. This documentation task did not independently run the game or build. A production release keystore and signed release pipeline are not configured or verified.
 
-**Repository:** https://github.com/Vano3667/HPGTA-Game — private GitHub repository, `main` branch. The English concept, README and autonomous build prompt have been updated. New scene and sprite SVG boards, eight original user-supplied reference screenshots, and archived older diagrams are uploaded. This handoff update is being published as the final documentation step for this revision.
+**Repository:** https://github.com/Vano3667/HPGTA-Game — private GitHub repository, `main` branch. The repo includes the game prototype, English design/prompt docs, visual references, and the new Android signing guide.
 
-**Next development step:** autonomously inspect the repository/toolchain and begin implementing the complete five-chapter Android survival game. Do not ask the user to choose an engine, make art decisions or resolve ambiguities; infer practical defaults, record them, continue.
+**Next development step:** keep the existing debug CI workflow intact. Configure the four repository Actions secrets with the release keystore and credential values through GitHub settings, then implement and verify a separate release-signed build. Do not request or store those values in chat or committed files.
 
 ## Approved Brief
 
@@ -56,7 +56,7 @@ Enemy sheet currently outlines: Aragog/giant spider, Dementor, Death Eater, anim
 - English Markdown documents were scanned; no Cyrillic characters were found.
 - GitHub root and reference directories were verified: four English Markdown docs, five new scene boards, two character/enemy boards, eight original screenshot references and five archived diagrams.
 - Browser screenshot preview of SVG failed in this environment with browser OS access/IPC errors; use a renderer in a future environment to inspect and revise art. Continue all independent game work rather than asking the user.
-- Current Android game implementation, SVG engine import, game/Android build and device behavior have not been tested.
+- This documentation update did not rerun the Android/game CI smoke test or export an APK. Use the `build` GitHub Actions workflow linked in the README for current prototype verification; release signing remains unconfigured.
 - Two automated upload scripts completed all content updates but returned exit code 1 during cleanup because a temporary Windows path did not exist. The actual uploads completed; remote directory checks confirmed the files are present.
 
 ## Android Release Signing — Required for Future Updates

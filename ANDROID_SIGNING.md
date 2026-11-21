@@ -6,6 +6,10 @@ Android accepts an APK as an update to an already installed app only when the up
 
 If the release keystore is lost or replaced, Android generally rejects an in-place update signed with a different certificate. Users may be forced to uninstall the current app before installing the differently signed APK, and uninstalling can remove local save data. Keep secure offline backups of the original keystore and credential recovery information.
 
+An existing debug-signed installation does not automatically accept a release-signed APK: the certificates must also match for that transition. Stable release signing enables future compatible updates; it does not guarantee that an update will preserve data if the game deletes saves or implements a faulty data migration. Test save retention during an actual upgrade.
+
+For Google Play App Signing, distinguish the **upload key** used for your AAB from the **app signing key** Google Play uses for APKs installed on devices. Use the established Play signing identity and supported key-upgrade process; replacing or resetting an upload key is not the same as changing the device-installed app certificate.
+
 ## GitHub Actions Secrets
 
 Add each value under the repository's **Settings → Secrets and variables → Actions → New repository secret**. Store them as Actions **secrets**, not plain repository variables. The names below are exactly the ones supplied for this project:
@@ -49,3 +53,8 @@ Do not commit the `.jks` or `.base64` file. Remove temporary copies from unprote
 ## Current Repository State
 
 The current `.github/workflows/build.yml` exports a **debug APK** using Godot's Android Debug preset. The current preset sets package ID `com.vano3667.hexdistrict` and `version/code=1`. As of this guide's addition, this is not yet a production release-signing pipeline, and the presence/configuration of the four GitHub secrets has not been verified. A future agent must inspect the current workflow/preset before changing them, preserve debug CI, and implement release signing only from Actions secrets.
+
+## Official References
+
+- [Android app signing and Play App Signing](https://developer.android.com/studio/publish/app-signing)
+- [Android app versioning](https://developer.android.com/studio/publish/versioning)

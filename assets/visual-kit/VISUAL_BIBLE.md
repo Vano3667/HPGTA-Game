@@ -19,7 +19,6 @@ The playable build still renders compact procedural silhouettes in `scripts/game
 | Source | Intended use | Crop/export guidance |
 |---|---|---|
 | `sprites/hero-wizard-pseudo3d-atlas.png` | Hero presentation atlas: four aiming directions and four run poses | Treat as visual master only. Crop every pose to a common canvas with 10–15% transparent padding, then repaint interpolation frames rather than scaling the full sheet. |
-| `sprites/hero-wizard-forward-wand-standing.png` | Corrected rear-facing standing pose with wand aimed forward, away from the camera | Use as the back-facing forward-aim reference. The wand points toward the top edge of the frame. |
 | `sprites/hero-wizard-run-left-clean.png` | Clean left-facing running pose with one wand arm and one bent free arm | Use as the corrected running reference; the extra empty rear sleeve from the marked-up reference has been removed. |
 | `sprites/hermione-full-body.png` | Adult witch companion with voluminous chestnut hair, book satchel and forward wand | Full-body transparent character master; preserve silhouette and wand direction when making gameplay crops. |
 | `sprites/ron-full-body.png` | Tall, lanky adult wizard companion with ginger hair, freckles and forward wand | Full-body transparent character master with a distinct silhouette from the other party members. |

@@ -1,7 +1,8 @@
 extends RefCounted
-## World rendering. Painted arenas use the map image as the floor; procedural arenas are drawn in
-## a GTA2-like pseudo-3D style (extruded props whose roofs lean away from the screen centre).
-## Sprites are stacked above soft shadows and an additive layer adds lights, glow and particles.
+## World rendering. Painted arenas use the map image as the floor and painted obstacle sprites;
+## procedural arenas are drawn in a GTA2-like pseudo-3D style (extruded props whose roofs lean away
+## from the screen centre). Sprites are stacked above soft shadows and an additive layer adds
+## lights, glow and particles.
 
 const Art = preload("res://scripts/game/art.gd")
 
@@ -46,6 +47,8 @@ static func draw(w, ci: CanvasItem) -> void:
     var edge: Color = ch.edge
     var font: Font = w.font
     var up := Vector2(0.0, -5.0)
+    var pl: Dictionary = w.player
+    var hero_pos: Vector2 = pl.pos
 
     # --- floor
     if w.floor_tex != null:
@@ -60,17 +63,27 @@ static func draw(w, ci: CanvasItem) -> void:
                 ci.draw_arc(d.pos, d.r, 0.0, TAU, 28, d.col, 2.0)
     ci.draw_rect(Rect2(Vector2.ZERO, a), edge, false, 3.0)
 
-    # --- drop shadows of the props that are on screen
+    # --- props on screen: drop shadows now; flat painted ones (pits, decor) go straight on the floor
     var near: Array = []
+    var painted: Array = []
     for p in w.props:
         var rect: Rect2 = p.rect
         if not view.intersects(rect.grow(90.0)):
+            continue
+        if p.kind == "sprite":
+            if p.flat:
+                ci.draw_texture_rect(p.tex, rect, false)
+            else:
+                var hit: Rect2 = p.hit
+                ci.draw_rect(Rect2(hit.position + Vector2(4.0, 5.0), hit.size), Color(0.0, 0.0, 0.0, 0.3))
+                painted.append(p)
             continue
         near.append(p)
         if p.kind == "box":
             ci.draw_rect(Rect2(rect.position + Vector2(5.0, 7.0), rect.size), Color(0.0, 0.0, 0.0, 0.3))
         else:
             ci.draw_circle(p.c + Vector2(4.0, 5.0), rect.size.x * 0.9, Color(0.0, 0.0, 0.0, 0.26))
+    painted.sort_custom(func(p1, p2): return p1.base < p2.base)
 
     # --- friendly ground effects
     for z in w.zones:
@@ -78,6 +91,11 @@ static func draw(w, ci: CanvasItem) -> void:
         ci.draw_circle(z.pos, z.r, Color(zc, 0.14))
         ci.draw_arc(z.pos, z.r, t * 0.8, t * 0.8 + TAU, 24, Color(zc, 0.7), 1.2)
         ci.draw_arc(z.pos, z.r * 0.6, -t * 1.4, -t * 1.4 + 4.2, 14, Color(zc, 0.45), 1.0)
+
+    # --- painted obstacles that stand behind the hero (the others are drawn after the actors)
+    for p in painted:
+        if p.base <= hero_pos.y:
+            ci.draw_texture_rect(p.tex, p.rect, false)
 
     # --- hazards: amber blinking outline while warning, solid red when live. Shape + motion, not colour alone.
     var pulse: float = 0.5 + 0.5 * sin(t * 14.0)
@@ -135,12 +153,14 @@ static func draw(w, ci: CanvasItem) -> void:
         ci.draw_line(bp - b.vel.normalized() * 7.0, bp, Color(bc, 0.5), 2.0)
         ci.draw_rect(box, bc)
         ci.draw_rect(box, Color(1.0, 1.0, 1.0, 0.9), false, 1.6 if hc else 0.8)
-    var pl: Dictionary = w.player
     var ghost: bool = pl.iframe > 0.0 and fmod(t * 16.0, 2.0) < 1.0
     var moving: bool = w.move_input.length() > 0.1 and w.active
-    Art.hero(ci, str(pl.get("hero", "harry")), pl.pos, pl.facing, pl.aim, t, ghost, moving)
+    Art.hero(ci, str(pl.get("hero", "harry")), hero_pos, pl.facing, pl.aim, t, ghost, moving)
 
-    # --- extruded props, far ones first so nearer roofs overlap them
+    # --- painted obstacles in front of the hero, then extruded props (far ones first)
+    for p in painted:
+        if p.base > hero_pos.y:
+            ci.draw_texture_rect(p.tex, p.rect, false)
     near.sort_custom(func(p1, p2): return cam.distance_squared_to(p1.c) > cam.distance_squared_to(p2.c))
     for p in near:
         _prop(ci, p, cam, edge)

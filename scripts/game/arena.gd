@@ -1,7 +1,30 @@
 extends RefCounted
-## Builds a stage arena. With a painted map (art/gen/map_*.png) the image already contains the
-## scenery, so only soft lights are added. Without it the arena is procedural: solid props with a
-## pseudo-3D height, ground decor and light sources, seeded so a chapter always looks the same.
+## Builds a stage arena. With a painted map (art/gen/map_*.png) the image is the floor; painted
+## obstacles (art/gen/prop_*.png) are placed on it from the PAINTED table and soft lights are added.
+## Without a painted map the arena is procedural: solid props with a pseudo-3D height, ground decor
+## and light sources, seeded so a chapter always looks the same.
+
+const Sprites = preload("res://scripts/core/sprites.gd")
+
+## World width of a painted obstacle, by the size class in its file name (the hero is about 20 wide).
+const PROP_SIZE := {"s": 24.0, "m": 52.0, "l": 100.0, "xl": 180.0}
+## Painted obstacles per map: [file name, x, y]. x is the centre and y the bottom edge of the
+## sprite, both as fractions of the arena. File names are <type>-<size>-<name>:
+## wall and low are solid, pit is a solid hole drawn flat on the floor, deco is not solid.
+## Nobody on the agent side has seen these layouts; they follow rules (open centre, wide lanes,
+## buildings along the edges) and are meant to be corrected from the user's feedback.
+const PAINTED := {
+    "01-diagon-alley": [
+        ["wall-xl-shop-row", 0.17, 0.125], ["wall-l-book-shop", 0.10, 0.42], ["wall-l-potion-shop", 0.10, 0.66], ["wall-l-book-shop", 0.10, 0.95],
+        ["wall-l-potion-shop", 0.90, 0.20], ["wall-l-book-shop", 0.90, 0.50], ["wall-xl-shop-row", 0.83, 0.75], ["wall-l-potion-shop", 0.90, 0.97],
+        ["wall-m-market-stall", 0.30, 0.34], ["wall-m-market-stall", 0.70, 0.60],
+        ["wall-s-lamp-post", 0.25, 0.18], ["wall-s-lamp-post", 0.75, 0.30], ["wall-s-lamp-post", 0.25, 0.56], ["wall-s-lamp-post", 0.75, 0.86],
+        ["low-s-barrels", 0.27, 0.46], ["low-s-barrels", 0.74, 0.44], ["low-s-barrels", 0.60, 0.13],
+        ["low-s-crates", 0.72, 0.52], ["low-s-crates", 0.28, 0.70], ["low-s-crates", 0.42, 0.09],
+        ["low-m-cart", 0.36, 0.86], ["low-m-cart", 0.62, 0.24],
+        ["pit-m-sinkhole", 0.62, 0.40], ["pit-m-sinkhole", 0.38, 0.66],
+    ],
+}
 
 
 # A solid extruded block. h is the pseudo-3D height (parallax factor of the roof).
@@ -44,6 +67,54 @@ static func _ring(w, pos: Vector2, r: float, col: Color) -> void:
     w.decor.append({"kind": "ring", "pos": pos, "r": r, "col": col})
 
 
+# Places the painted obstacles of a map. Returns how many were placed (0 when the art is missing).
+# "rect" is where the sprite is drawn; "hit" is the solid part; "base" is its lower edge, used to
+# decide whether the hero is in front of the obstacle or behind it.
+static func _painted(w, map: String, accent: Color) -> int:
+    if not PAINTED.has(map):
+        return 0
+    var a: Vector2 = w.arena
+    var placed: int = 0
+    for item in PAINTED[map]:
+        var id: String = item[0]
+        var tx: Texture2D = Sprites.tex("prop_%s_%s" % [map, id])
+        if tx == null:
+            continue
+        var parts: PackedStringArray = id.split("-")
+        var type: String = parts[0]
+        var width: float = float(PROP_SIZE.get(parts[1], 52.0))
+        var size := Vector2(width, width * tx.get_height() / float(tx.get_width()))
+        var pos := Vector2(float(item[1]) * a.x - size.x * 0.5, float(item[2]) * a.y - size.y)
+        pos.x = clampf(pos.x, 2.0, maxf(2.0, a.x - size.x - 2.0))
+        pos.y = clampf(pos.y, 2.0, maxf(2.0, a.y - size.y - 2.0))
+        var box := Rect2(pos, size)
+        var hit: Rect2 = box
+        var solid: bool = true
+        var flat: bool = false
+        if type == "wall":
+            if width <= 30.0 and size.y > size.x * 1.5:
+                # A post: only its base is solid, the rest can be walked behind.
+                var b: float = size.x * 0.7
+                hit = Rect2(pos.x + (size.x - b) * 0.5, pos.y + size.y - b, b, b)
+            else:
+                hit = Rect2(pos.x + size.x * 0.05, pos.y + size.y * 0.2, size.x * 0.9, size.y * 0.78)
+        elif type == "low":
+            hit = Rect2(pos.x + size.x * 0.1, pos.y + size.y * 0.3, size.x * 0.8, size.y * 0.62)
+        elif type == "pit":
+            flat = true
+            hit = box.grow(-minf(size.x, size.y) * 0.16)
+        else:
+            flat = true
+            solid = false
+        w.props.append({"kind": "sprite", "rect": box, "c": box.get_center(), "h": 0.0, "tex": tx, "flat": flat, "hit": hit, "base": hit.end.y})
+        if solid:
+            w.obstacles.append(hit)
+        if id.contains("lamp"):
+            _light(w, Vector2(box.get_center().x, pos.y + size.x * 0.5), accent, 78.0)
+        placed += 1
+    return placed
+
+
 static func build(w) -> void:
     w.obstacles = []
     w.props = []
@@ -60,7 +131,8 @@ static func build(w) -> void:
     var edge: Color = ch.edge
     var accent: Color = ch.accent
     if w.floor_tex != null:
-        for i in 7:
+        var placed: int = _painted(w, str(ch.get("map", "")), accent)
+        for i in (3 if placed > 0 else 7):
             _light(w, Vector2(lr.randf_range(0.15, 0.85) * a.x, lr.randf_range(0.1, 0.9) * a.y), accent, lr.randf_range(60.0, 100.0))
         return
     match ch.layout:

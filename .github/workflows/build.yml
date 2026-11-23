@@ -50,6 +50,8 @@ jobs:
           grep -F "[sprites] done" sprites.log
           grep -F "[smoke] PASS" smoke.log
           echo "Engine ERROR lines (informational): $(grep -c 'ERROR:' smoke.log || true)"
+          echo "--- sprite build summary (everything except plain 'wrote' lines)"
+          grep -F "[sprites]" sprites.log | grep -v -E "wrote (map|mob|prop|boss|hero)_" || true
 
   android:
     name: Android debug APK

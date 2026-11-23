@@ -10,6 +10,7 @@ const MusicScript = preload("res://scripts/core/music.gd")
 const Sprites = preload("res://scripts/core/sprites.gd")
 const I18n = preload("res://scripts/core/i18n.gd")
 const Chapters = preload("res://scripts/data/chapters.gd")
+const Style = preload("res://scripts/ui/style.gd")
 
 var save
 var sfx
@@ -27,12 +28,15 @@ func _ready() -> void:
     if str(save.data.get("lang", "")) == "":
         save.data["lang"] = I18n.system_lang()
     I18n.lang = str(save.data["lang"])
+    Style.load_fonts()
     sfx = SfxScript.new()
     add_child(sfx)
     music = MusicScript.new()
     add_child(music)
     world = WorldScript.new()
     add_child(world)
+    # Floating texts in the arena use the interface font too.
+    world.font = Style.bold
     var layer := CanvasLayer.new()
     add_child(layer)
     stick = StickScript.new()
@@ -139,6 +143,23 @@ func _on_level_up(choices: Array) -> void:
 func _on_upgrade(choice: Dictionary) -> void:
     hud.close_panel()
     world.apply_upgrade(choice)
+    if world.active:
+        _level_fx()
+
+
+# When play resumes after a level-up: two shockwave rings, a shower of sparks and a column of
+# light rising from the hero. Purely visual.
+func _level_fx() -> void:
+    var pp: Vector2 = world.player.pos
+    var gold := Color("f0d278")
+    var rng: RandomNumberGenerator = world.rng
+    world.add_fx({"kind": "ring", "pos": pp, "r0": 6.0, "r1": 120.0, "col": gold, "life": 0.6, "width": 3.0})
+    world.add_fx({"kind": "ring", "pos": pp, "r0": 4.0, "r1": 70.0, "col": Color("67dcf4"), "life": 0.45, "width": 2.0})
+    world.burst(pp, gold, 28, 170.0)
+    for i in 16:
+        var at: Vector2 = pp + Vector2(rng.randf_range(-11.0, 11.0), rng.randf_range(-4.0, 6.0))
+        var col: Color = gold if i % 3 > 0 else Color("fff6d0")
+        world.spawn_part(at, Vector2(0.0, -rng.randf_range(70.0, 190.0)), rng.randf_range(0.45, 0.9), col, 1.6, true, 1)
 
 
 func _on_chapter_cleared(index: int) -> void:

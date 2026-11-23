@@ -81,15 +81,28 @@ func _save(img: Image, name: String) -> void:
         print("[sprites] could not write %s.png" % name)
 
 
-# The real file name for a base name, ignoring case and stray spaces ("name .png"). "" if absent.
+func _is_png(n: String) -> bool:
+    return n.strip_edges().to_lower().ends_with(".png")
+
+
+# A file name reduced to what matters: lower case, no stray spaces, no extension - also when the
+# extension was typed twice ("name.png.png") or has a space before it ("name .png").
+func _norm(n: String) -> String:
+    var s: String = n.strip_edges().to_lower()
+    while s.ends_with(".png"):
+        s = s.substr(0, s.length() - 4).strip_edges()
+    return s
+
+
+# The real file name for a base name (see _norm). "" if there is no such file.
 func _find(dir_rel: String, base: String) -> String:
     var dir: String = ProjectSettings.globalize_path(SRC + dir_rel)
     if not DirAccess.dir_exists_absolute(dir):
         return ""
-    var want: String = base.strip_edges().to_lower()
+    var want: String = _norm(base)
     for n in DirAccess.get_files_at(dir):
         var f: String = str(n)
-        if f.get_extension().to_lower() == "png" and f.get_basename().strip_edges().to_lower() == want:
+        if _is_png(f) and _norm(f) == want:
             return f
     return ""
 
@@ -377,8 +390,8 @@ func _hero(id: String, cfg: Dictionary) -> void:
         for d in 4:
             var src: Rect2i = cells[row * 4 + int(order[d])]
             sheet.blit_rect(_frame(img, src, HERO_CELL, HERO_CELL, scale), cell_rect, Vector2i(d * HERO_CELL, row * HERO_CELL))
-    if cfg.has("back_fix") and _find("sprites", str(cfg.back_fix).get_basename()) != "":
-        var fix_file: String = cfg.back_fix
+    if cfg.has("back_fix") and _find("sprites", str(cfg.back_fix)) != "":
+        var fix_file: String = _find("sprites", str(cfg.back_fix))
         var fix: Image = _load(fix_file)
         if fix != null:
             var fw: int = fix.get_width()
@@ -526,9 +539,9 @@ func _props() -> void:
         files.sort()
         for n in files:
             var file: String = str(n)
-            if file.get_extension().to_lower() != "png":
+            if not _is_png(file):
                 continue
-            var id: String = file.get_basename().strip_edges().to_lower()
+            var id: String = _norm(file)
             var parts: PackedStringArray = id.split("-")
             if parts.size() < 3 or not (parts[0] in PROP_TYPES) or not PROP_W.has(parts[1]):
                 print("[sprites] skip prop %s/%s: the name must be <type>-<size>-<name>.png" % [loc, file])
@@ -556,11 +569,11 @@ func _map_dir(dir_rel: String) -> void:
     files.sort()
     for n in files:
         var file: String = str(n)
-        if file.get_extension().to_lower() != "png":
+        if not _is_png(file):
             continue
         var img := Image.new()
         if img.load(base + "/" + file) != OK:
             print("[sprites] skip map %s/%s: cannot load" % [dir_rel, file])
             continue
         img.convert(Image.FORMAT_RGB8)
-        _save(img, "map_" + file.get_basename().strip_edges())
+        _save(img, "map_" + _norm(file))

@@ -17,6 +17,8 @@ permissions:
 
 env:
   GODOT_VERSION: "4.3"
+  # Interface fonts (SIL Open Font License) at a fixed commit of github.com/google/fonts.
+  FONT_BASE: "https://raw.githubusercontent.com/google/fonts/06bfe0d62a98375cb09c942fa18e68bd32cff057/ofl"
 
 defaults:
   run:
@@ -34,6 +36,22 @@ jobs:
         uses: actions/checkout@v4
       - name: Build runtime art from assets/visual-kit
         run: godot --headless --path . -s res://tools/build_sprites.gd 2>&1 | tee sprites.log
+      - name: Fetch interface fonts (optional; the game falls back to the engine font)
+        run: |
+          mkdir -p art/gen
+          fetch() {
+            if wget -q -O "art/gen/$2" "$FONT_BASE/$1" || curl -fsSL -o "art/gen/$2" "$FONT_BASE/$1"; then
+              if [ -s "art/gen/$2" ]; then
+                echo "[fonts] $2: $(wc -c < "art/gen/$2") bytes"
+                return 0
+              fi
+            fi
+            rm -f "art/gen/$2"
+            echo "::warning::could not download $1 - the game will use the engine's default font"
+          }
+          fetch yesevaone/YesevaOne-Regular.ttf font_title.ttf
+          fetch philosopher/Philosopher-Regular.ttf font_body.ttf
+          fetch philosopher/Philosopher-Bold.ttf font_bold.ttf
       - name: Import project
         run: godot --headless --path . --import 2>&1 | tee import.log
       - name: Smoke test (bot plays the story, endless mode and every menu)
@@ -49,7 +67,11 @@ jobs:
           fi
           grep -F "[sprites] done" sprites.log
           grep -F "[smoke] PASS" smoke.log
+          grep -F "[smoke] fonts" smoke.log || true
+          grep -F "[smoke] draw pass" smoke.log || true
+          grep -F "[smoke] painted art" smoke.log || true
           echo "Engine ERROR lines (informational): $(grep -c 'ERROR:' smoke.log || true)"
+          grep -m 12 -A 2 'ERROR:' smoke.log || true
           echo "--- sprite build summary (everything except plain 'wrote' lines)"
           grep -F "[sprites]" sprites.log | grep -v -E "wrote (map|mob|prop|boss|hero)_" || true
 
@@ -72,6 +94,22 @@ jobs:
           fi
       - name: Build runtime art from assets/visual-kit
         run: godot --headless --path . -s res://tools/build_sprites.gd 2>&1 | grep -F "[sprites]"
+      - name: Fetch interface fonts (optional; the game falls back to the engine font)
+        run: |
+          mkdir -p art/gen
+          fetch() {
+            if wget -q -O "art/gen/$2" "$FONT_BASE/$1" || curl -fsSL -o "art/gen/$2" "$FONT_BASE/$1"; then
+              if [ -s "art/gen/$2" ]; then
+                echo "[fonts] $2: $(wc -c < "art/gen/$2") bytes"
+                return 0
+              fi
+            fi
+            rm -f "art/gen/$2"
+            echo "::warning::could not download $1 - the game will use the engine's default font"
+          }
+          fetch yesevaone/YesevaOne-Regular.ttf font_title.ttf
+          fetch philosopher/Philosopher-Regular.ttf font_body.ttf
+          fetch philosopher/Philosopher-Bold.ttf font_bold.ttf
       - name: Export debug APK
         run: |
           mkdir -p build/android

@@ -2,6 +2,8 @@ extends SceneTree
 ## Headless smoke test. Checks the data tables and both languages, lets a simple bot play the whole
 ## story (ten chapters and five boss arenas) and three endless stages, verifies synergies, fusions,
 ## meta upgrades, dodge and revive, then builds the UI scene and opens every panel in EN and RU.
+## After that it keeps the real scene alive for a few frames so the drawing code runs as well
+## (nothing reaches a screen, but script errors in draw code are caught).
 ## Usage: godot --headless --path . -s res://tests/smoke_test.gd
 ## Note: the UI pass writes the normal local save file (user://hex_district.cfg).
 
@@ -11,6 +13,7 @@ const Enemies = preload("res://scripts/data/enemies.gd")
 const Spells = preload("res://scripts/data/spells.gd")
 const I18n = preload("res://scripts/core/i18n.gd")
 const Sprites = preload("res://scripts/core/sprites.gd")
+const Style = preload("res://scripts/ui/style.gd")
 
 const DT := 0.05
 
@@ -21,35 +24,46 @@ var ended := false
 var victory := false
 var levelups := 0
 var stages := 0
-var _started := false
+var _phase := 0
+var _main = null
+var _hud_draws := 0
+var _world_draws := 0
 
 
 func _process(_delta: float) -> bool:
-    if _started:
+    if _phase < 0:
         return true
-    _started = true
-    _check_data()
-    world = WorldScript.new()
-    root.add_child(world)
-    world.level_up.connect(_on_level_up)
-    world.chapter_cleared.connect(_on_cleared)
-    world.run_ended.connect(_on_ended)
-    world.stage_changed.connect(_on_stage)
-    _mortal_run()
-    _full_run()
-    _endless_run()
-    _synergy_check()
-    _fusion_check()
-    _meta_check()
-    _checkpoint_roundtrip()
-    _upgrade_exhaustion()
-    world.queue_free()
-    _ui_pass("en")
-    _ui_pass("ru")
+    if _phase == 0:
+        _phase = 1
+        _check_data()
+        world = WorldScript.new()
+        root.add_child(world)
+        world.level_up.connect(_on_level_up)
+        world.chapter_cleared.connect(_on_cleared)
+        world.run_ended.connect(_on_ended)
+        world.stage_changed.connect(_on_stage)
+        _mortal_run()
+        _full_run()
+        _endless_run()
+        _synergy_check()
+        _fusion_check()
+        _meta_check()
+        _checkpoint_roundtrip()
+        _upgrade_exhaustion()
+        world.queue_free()
+        _ui_pass("en")
+        _ui_pass("ru")
+        _draw_begin()
+        return false
+    _phase += 1
+    if _draw_step():
+        return false
+    print("[smoke] draw pass: %d frames; the HUD drew %d times, the arena %d times" % [_phase - 2, _hud_draws, _world_draws])
     for f in failures:
         print("[smoke] FAIL: %s" % str(f))
     if failures.is_empty():
         print("[smoke] PASS")
+    _phase = -1
     quit(0 if failures.is_empty() else 1)
     return true
 
@@ -168,11 +182,13 @@ func _check_data() -> void:
         if not rule.el.is_empty() and Spells.element_sources(rule.el).is_empty():
             failures.append("synergy %s has no spell of its element" % str(sid))
     var art: Array = []
-    for name in ["hero_harry", "hero_hermione", "hero_ron", "boss_quirrell", "boss_basilisk", "boss_dementor", "boss_nagini", "boss_voldemort", "mob_spider", "mob_centaur"]:
+    for name in ["hero_harry", "hero8_harry", "hero8_hermione", "hero8_ron", "boss8_quirrell", "boss8_basilisk", "top_basilisk_move", "boss_dementor", "boss_nagini", "boss_voldemort", "mob_spider", "mob_centaur"]:
         if Sprites.tex(name) != null:
             art.append(name)
+    Style.load_fonts()
     print("[smoke] data: %d chapters + %d boss arenas, %d spells, %d fusions, %d synergies, %d enemy types, %d translation rows" % [levels, duels, Spells.WEAPONS.size(), Spells.FUSIONS.size(), Spells.SYNERGIES.size(), Enemies.TYPES.size(), I18n.S.size()])
     print("[smoke] painted art found: %d/%d maps, sheets %s" % [painted, Chapters.LIST.size(), str(art)])
+    print("[smoke] fonts: %d of 3 interface font files found" % Style.found)
 
 
 # A circling bot with normal damage rules: it is allowed to die, the run just has to behave.
@@ -459,3 +475,81 @@ func _ui_pass(lang: String) -> void:
     hud.menu_requested.emit()
     print("[smoke] UI pass (%s): menu title sample = %s" % [lang, I18n.t("ui_new")])
     main.queue_free()
+
+
+# ---------------------------------------------------------------- draw pass
+# The scene built here stays in the tree while _process returns false, so the engine runs whole
+# frames in between and sends the draw notifications for whatever each step left on screen.
+
+func _draw_begin() -> void:
+    var scene = load("res://scenes/main.tscn")
+    if scene == null:
+        return
+    _main = scene.instantiate()
+    root.add_child(_main)
+    if _main.hud == null or _main.world == null:
+        _main = null
+        return
+    _main.save.data["lang"] = "ru"
+    _main.save.data["tutorial"] = false
+    _main.save.data["seen"] = {"cauldron": true, "spider": true, "quirrell": true, "basilisk": true}
+    _main.hud.settings_changed.emit()
+    _main.hud.draw.connect(func(): _hud_draws += 1)
+    _main.world.draw.connect(func(): _world_draws += 1)
+    _main.hud.show_menu()
+
+
+# Play for n steps through the real scene, picking the first card whenever a level arrives.
+func _sim(n: int) -> void:
+    var w = _main.world
+    for i in n:
+        if not w.active:
+            if int(w.player.pending) > 0:
+                _main.hud.upgrade_chosen.emit(Spells.choices(w.player, w.rng)[0])
+            else:
+                return
+        w.move_input = Vector2.from_angle(i * 0.07)
+        w.step(DT)
+
+
+# One step per frame. Returns false when the pass is over.
+func _draw_step() -> bool:
+    if _main == null:
+        return false
+    var hud = _main.hud
+    var w = _main.world
+    match _phase:
+        2:
+            # The main menu was drawn. Start a run: arena, hero, enemies, HUD strip, hints.
+            hud.start_requested.emit("story")
+            w.invulnerable = true
+            _sim(160)
+        3:
+            # The level-up screen with its backdrop, part-way through the burst.
+            w.player.pending = 0
+            hud.show_levelup(Spells.choices(w.player, w.rng), 2)
+            hud._fx_t = 0.7
+        4:
+            # Quirrell's arena.
+            hud.close_panel()
+            w.load_chapter(2)
+            _sim(110)
+        5:
+            # The Basilisk's arena.
+            hud.close_panel()
+            w.player.pending = 0
+            w.load_chapter(5)
+            _sim(110)
+        6:
+            hud.show_pause()
+        7:
+            hud.show_bestiary(hud.show_menu)
+        8:
+            hud.show_heroes(hud.show_menu)
+        9:
+            hud.menu_requested.emit()
+        _:
+            _main.queue_free()
+            _main = null
+            return false
+    return true

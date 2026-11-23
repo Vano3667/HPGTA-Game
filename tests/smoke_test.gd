@@ -1,6 +1,7 @@
 extends SceneTree
 ## Headless smoke test. Checks the data tables and both languages, lets a simple bot play the whole
-## story (ten chapters and five boss arenas) and three endless stages, verifies synergies, fusions,
+## story (ten chapters and five boss stages) and three endless stages, walks far across the open
+## world, loads every stage with code-drawn graphics, verifies synergies, fusions, the upgrade pool,
 ## meta upgrades, dodge and revive, then builds the UI scene and opens every panel in EN and RU.
 ## After that it keeps the real scene alive for a few frames so the drawing code runs as well
 ## (nothing reaches a screen, but script errors in draw code are caught).
@@ -8,14 +9,18 @@ extends SceneTree
 ## Note: the UI pass writes the normal local save file (user://hex_district.cfg).
 
 const WorldScript = preload("res://scripts/game/world.gd")
+const Arena = preload("res://scripts/game/arena.gd")
 const Chapters = preload("res://scripts/data/chapters.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Spells = preload("res://scripts/data/spells.gd")
 const I18n = preload("res://scripts/core/i18n.gd")
+const I18n2 = preload("res://scripts/core/i18n2.gd")
 const Sprites = preload("res://scripts/core/sprites.gd")
 const Style = preload("res://scripts/ui/style.gd")
 
 const DT := 0.05
+## Number of sound streams sfx.gd builds: 8 crystal notes, 4 wand notes and 10 single effects.
+const SOUNDS := 22
 
 var world
 var failures: Array = []
@@ -45,6 +50,8 @@ func _process(_delta: float) -> bool:
         _mortal_run()
         _full_run()
         _endless_run()
+        _open_world()
+        _drawn_stages()
         _synergy_check()
         _fusion_check()
         _meta_check()
@@ -125,17 +132,25 @@ func _check_data() -> void:
             if not Enemies.BOSSES.has(ch.boss):
                 failures.append("unknown boss %s" % str(ch.boss))
         elif ch.get("duel", false):
-            failures.append("boss arena %s has no boss" % str(ch.id))
+            failures.append("boss stage %s has no boss" % str(ch.id))
     Sprites.forget("map_")
     if levels != 10 or duels != 5:
-        failures.append("expected 10 chapters and 5 boss arenas, found %d and %d" % [levels, duels])
+        failures.append("expected 10 chapters and 5 boss stages, found %d and %d" % [levels, duels])
     if Spells.WEAPONS.size() != 28:
         failures.append("expected 28 spells, found %d" % Spells.WEAPONS.size())
+    if Spells.WEAPON_SLOTS > Spells.WEAPONS.size() or Spells.PASSIVE_SLOTS > Spells.PASSIVES.size():
+        failures.append("more slots than there are spells or talismans")
+    if Spells.EVOLVE_LEVEL > Spells.MAX_LEVEL:
+        failures.append("evolutions need a spell level that cannot be reached")
     for type in Enemies.TYPES:
         _need("en_" + str(type))
         _need("ai_" + str(Enemies.TYPES[type].ai))
     for key in Enemies.BOSSES:
         _need("bo_" + str(key))
+    for key in I18n2.S:
+        var extra: Array = I18n2.S[key]
+        if extra.size() != 2 or str(extra[0]) == "" or str(extra[1]) == "":
+            failures.append("translation %s needs both English and Russian text" % str(key))
     var statuses := {}
     for id in Spells.WEAPONS:
         _need("sp_" + str(id))
@@ -186,7 +201,8 @@ func _check_data() -> void:
         if Sprites.tex(name) != null:
             art.append(name)
     Style.load_fonts()
-    print("[smoke] data: %d chapters + %d boss arenas, %d spells, %d fusions, %d synergies, %d enemy types, %d translation rows" % [levels, duels, Spells.WEAPONS.size(), Spells.FUSIONS.size(), Spells.SYNERGIES.size(), Enemies.TYPES.size(), I18n.S.size()])
+    print("[smoke] data: %d chapters + %d boss stages, %d spells, %d fusions, %d synergies, %d enemy types, %d + %d translation rows" % [levels, duels, Spells.WEAPONS.size(), Spells.FUSIONS.size(), Spells.SYNERGIES.size(), Enemies.TYPES.size(), I18n.S.size(), I18n2.S.size()])
+    print("[smoke] build limits: %d spells to level %d, %d talismans to level %d" % [Spells.WEAPON_SLOTS, Spells.MAX_LEVEL, Spells.PASSIVE_SLOTS, Spells.PASSIVE_MAX])
     print("[smoke] painted art found: %d/%d maps, sheets %s" % [painted, Chapters.LIST.size(), str(art)])
     print("[smoke] fonts: %d of 3 interface font files found" % Style.found)
 
@@ -201,7 +217,7 @@ func _mortal_run() -> void:
         world.move_input = Vector2.from_angle(t * 0.6)
         world.step(DT)
         t += DT
-    print("[smoke] mortal bot: ended=%s victory=%s stage=%d run_time=%ds level=%d kills=%d hp=%d gold=%d arena=%s" % [str(ended), str(victory), int(world.chapter_index) + 1, int(world.run_time), int(world.player.level), int(world.kills), int(world.player.hp), int(world.run_gold), str(world.arena)])
+    print("[smoke] mortal bot: ended=%s victory=%s stage=%d run_time=%ds level=%d kills=%d hp=%d gold=%d floor tile=%s" % [str(ended), str(victory), int(world.chapter_index) + 1, int(world.run_time), int(world.player.level), int(world.kills), int(world.player.hp), int(world.run_gold), str(world.arena)])
     if int(world.kills) <= 0:
         failures.append("mortal run: automatic attacks defeated nothing")
     if levelups <= 0:
@@ -232,7 +248,7 @@ func _full_run() -> void:
             boss_t = 0.0
     world.invulnerable = false
     print("[smoke] full run: ended=%s victory=%s stages_cleared=%d sim_time=%ds level=%d gold=%d forced_boss_kills=%d" % [str(ended), str(victory), cleared.size(), int(t), int(world.player.level), int(world.run_gold), forced])
-    print("[smoke] final build: spells=%s fusions=%s synergies=%s" % [str(world.player.weapons.keys()), str(world.player.fusions.keys()), str(world.syn)])
+    print("[smoke] final build: spells=%s talismans=%s fusions=%s synergies=%s" % [str(world.player.weapons), str(world.player.passives), str(world.player.fusions.keys()), str(world.syn)])
     if not ended or not victory:
         failures.append("full run did not reach victory")
     if cleared.size() != Chapters.LIST.size() - 1:
@@ -243,7 +259,7 @@ func _full_run() -> void:
         failures.append("a full run recorded no bestiary entries")
 
 
-# Endless mode: arenas change by themselves, boss arenas are skipped and nothing ends the run.
+# Endless mode: stages change by themselves, boss stages are skipped and nothing ends the run.
 func _endless_run() -> void:
     _reset()
     world.invulnerable = true
@@ -261,13 +277,81 @@ func _endless_run() -> void:
                 boss_t = 0.0
         else:
             boss_t = 0.0
-    print("[smoke] endless: stages=%d tier=%d arena=%s sim_time=%ds" % [stages, int(world.tier), str(world.chapter.id), int(t)])
+    print("[smoke] endless: stages=%d tier=%d stage=%s sim_time=%ds" % [stages, int(world.tier), str(world.chapter.id), int(t)])
     if stages < 3 or int(world.tier) != stages:
         failures.append("endless mode did not advance through three stages")
     if world.chapter.get("duel", false):
-        failures.append("endless mode entered a boss arena")
+        failures.append("endless mode entered a boss stage")
     if ended or not cleared.is_empty():
         failures.append("endless mode ended or raised a story stage-clear")
+    world.invulnerable = false
+    world.active = false
+    world.in_run = false
+
+
+# The world has no borders: the hero walks one way for almost a minute and must keep going,
+# obstacles must keep appearing around him, and the crowd must keep up.
+func _open_world() -> void:
+    _reset()
+    world.invulnerable = true
+    world.start_run({})
+    var start: Vector2 = world.player.pos
+    for o in world.obstacles:
+        var rect: Rect2 = o
+        if rect.grow(float(world.player.r)).has_point(start):
+            failures.append("the hero starts inside an obstacle")
+    var first: Dictionary = Arena._chunk(world, 3, -2)
+    var again: Dictionary = Arena._chunk(world, 3, -2)
+    if str(first.obstacles) != str(again.obstacles):
+        failures.append("a chunk is not the same when it is built twice")
+    var dir: Vector2 = Vector2(1.0, 0.4).normalized()
+    var most: int = 0
+    var seen_obstacles: int = 0
+    for i in 1100:
+        world.move_input = dir
+        world.step(DT)
+        most = maxi(most, world.chunks.size())
+        seen_obstacles = maxi(seen_obstacles, world.obstacles.size())
+    var pp: Vector2 = world.player.pos
+    var gone: Vector2 = pp - start
+    var far: float = 0.0
+    for e in world.enemies:
+        if e.hp > 0.0:
+            far = maxf(far, pp.distance_to(e.pos))
+    print("[smoke] open world: walked %d right and %d down in 55 s; at most %d chunks kept; %d obstacles and %d props around the hero now (palette of %d painted obstacles); %d enemies, the farthest %d away" % [int(gone.x), int(gone.y), most, world.obstacles.size(), world.props.size(), world.palette.size(), world.enemies.size(), int(far)])
+    if gone.x < 1500.0:
+        failures.append("the hero got only %d units to the right in 55 s: something still fences the world in" % int(gone.x))
+    if most > 49:
+        failures.append("too many chunks are kept (%d)" % most)
+    if seen_obstacles <= 0:
+        failures.append("the open world generated no obstacles")
+    if world.enemies.is_empty():
+        failures.append("no enemies followed the hero across the open world")
+    if far > float(world.LEASH) + 40.0:
+        failures.append("an enemy was left %d units behind" % int(far))
+    world.invulnerable = false
+    world.active = false
+    world.in_run = false
+
+
+# Every stage with "Graphics: simple": no painted floor, so the code-drawn generator runs.
+func _drawn_stages() -> void:
+    _reset()
+    world.invulnerable = true
+    world.start_run({"sprites": false})
+    var counts: Array = []
+    for i in Chapters.LIST.size():
+        world.load_chapter(i)
+        if world.floor_tex != null:
+            failures.append("stage %d kept its painted floor with graphics set to simple" % (i + 1))
+        for k in 60:
+            world.move_input = Vector2(0.4, 1.0).normalized()
+            world.step(DT)
+        counts.append(world.obstacles.size())
+        if world.obstacles.is_empty():
+            failures.append("code-drawn stage %d (%s) has no obstacles" % [i + 1, str(world.chapter.layout)])
+    print("[smoke] code-drawn stages: obstacles around the hero per stage %s" % str(counts))
+    Sprites.enabled = true
     world.invulnerable = false
     world.active = false
     world.in_run = false
@@ -408,25 +492,51 @@ func _checkpoint_roundtrip() -> void:
     world.in_run = false
 
 
+# Take a regular upgrade at every level until none is left. A level-up must always offer three
+# cards; once the regular ones are gone they are repeatable bonuses, and a bonus must do something.
 func _upgrade_exhaustion() -> void:
     var p: Dictionary = Spells.new_player()
     var rng := RandomNumberGenerator.new()
     rng.seed = 7
     var n: int = 0
-    while n < 300:
-        var c: Array = Spells.choices(p, rng)
-        if c.is_empty():
-            failures.append("upgrade roll returned no cards")
+    var last: Array = []
+    while n < 400:
+        last = Spells.choices(p, rng)
+        if last.size() != 3:
+            failures.append("a level-up offered %d cards instead of 3 (after %d picks)" % [last.size(), n])
             return
-        if c[0].kind == "heal":
+        var pick = null
+        for c in last:
+            if c.kind != "heal" and c.kind != "boon":
+                pick = c
+                break
+        if pick == null:
             break
-        Spells.apply(p, c[0])
+        Spells.apply(p, pick)
         n += 1
-    print("[smoke] upgrade pool exhausted after %d picks; spells=%d fusions=%s evolutions=%s" % [n, p.weapons.size(), str(p.fusions.keys()), str(p.evolved.keys())])
-    if n >= 300:
-        failures.append("upgrade pool never exhausts")
-    if p.weapons.size() != Spells.WEAPON_SLOTS:
-        failures.append("a full build should hold exactly %d spells" % Spells.WEAPON_SLOTS)
+    print("[smoke] upgrades: the regular pool lasts %d picks; then every level offers repeatable cards. Final build: %d spells, %d talismans, fusions %s, evolutions %s" % [n, p.weapons.size(), p.passives.size(), str(p.fusions.keys()), str(p.evolved.keys())])
+    if n >= 400:
+        failures.append("the upgrade pool never runs out")
+    if p.weapons.size() != Spells.WEAPON_SLOTS or p.passives.size() != Spells.PASSIVE_SLOTS:
+        failures.append("a full build should hold exactly %d spells and %d talismans" % [Spells.WEAPON_SLOTS, Spells.PASSIVE_SLOTS])
+    for id in p.weapons:
+        if int(p.weapons[id]) != Spells.MAX_LEVEL:
+            failures.append("spell %s stopped at level %d" % [str(id), int(p.weapons[id])])
+    for id in p.passives:
+        if int(p.passives[id]) != Spells.PASSIVE_MAX:
+            failures.append("talisman %s stopped at level %d" % [str(id), int(p.passives[id])])
+    var boons: int = 0
+    for c in last:
+        if c.kind != "boon":
+            continue
+        boons += 1
+        var before: String = "%.4f %.4f %.1f" % [float(p.m_dmg), float(p.m_cd), float(p.max_hp)]
+        Spells.apply(p, c)
+        var after: String = "%.4f %.4f %.1f" % [float(p.m_dmg), float(p.m_cd), float(p.max_hp)]
+        if before == after:
+            failures.append("the repeatable card %s changed nothing" % str(c.id))
+    if boons < 2:
+        failures.append("a finished build was offered fewer than two repeatable bonuses")
 
 
 # Build the real main scene and open every panel once so UI scripts run in the given language.
@@ -473,8 +583,31 @@ func _ui_pass(lang: String) -> void:
         main.world.step(DT)
     hud.show_summary(false)
     hud.menu_requested.emit()
-    print("[smoke] UI pass (%s): menu title sample = %s" % [lang, I18n.t("ui_new")])
+    print("[smoke] UI pass (%s): menu title sample = %s; limits line = %s" % [lang, I18n.t("ui_new"), Spells.limits(main.world.player)])
     main.queue_free()
+
+
+# Every sound a spell, a fusion or the world asks for must have been synthesised.
+func _sound_check(sfx) -> void:
+    var ready: int = int(sfx.ready_count())
+    var wanted: Array = ["hurt", "warn", "burst", "level", "levelup", "boss_down", "gem"]
+    for table in [Spells.WEAPONS, Spells.FUSIONS]:
+        for id in table:
+            var snd: String = str(table[id].get("snd", ""))
+            if snd != "" and not (snd in wanted):
+                wanted.append(snd)
+    var missing: Array = []
+    for item in wanted:
+        var key: String = str(item)
+        if key == "gem" or key == "wand":
+            key += "0"
+        if not sfx._streams.has(key):
+            missing.append(item)
+    print("[smoke] sound: %d of %d effect streams synthesised; ids in use %s" % [ready, SOUNDS, str(wanted)])
+    if ready < SOUNDS:
+        failures.append("only %d of %d sound effects were synthesised" % [ready, SOUNDS])
+    if not missing.is_empty():
+        failures.append("no sound for %s" % str(missing))
 
 
 # ---------------------------------------------------------------- draw pass
@@ -490,6 +623,7 @@ func _draw_begin() -> void:
     if _main.hud == null or _main.world == null:
         _main = null
         return
+    _sound_check(_main.sfx)
     _main.save.data["lang"] = "ru"
     _main.save.data["tutorial"] = false
     _main.save.data["seen"] = {"cauldron": true, "spider": true, "quirrell": true, "basilisk": true}
@@ -520,7 +654,7 @@ func _draw_step() -> bool:
     var w = _main.world
     match _phase:
         2:
-            # The main menu was drawn. Start a run: arena, hero, enemies, HUD strip, hints.
+            # The main menu was drawn. Start a run: floor tiles, obstacles, hero, enemies, HUD strip.
             hud.start_requested.emit("story")
             w.invulnerable = true
             _sim(160)
@@ -530,12 +664,12 @@ func _draw_step() -> bool:
             hud.show_levelup(Spells.choices(w.player, w.rng), 2)
             hud._fx_t = 0.7
         4:
-            # Quirrell's arena.
+            # Quirrell's stage.
             hud.close_panel()
             w.load_chapter(2)
             _sim(110)
         5:
-            # The Basilisk's arena.
+            # The Basilisk's stage.
             hud.close_panel()
             w.player.pending = 0
             w.load_chapter(5)
@@ -547,6 +681,29 @@ func _draw_step() -> bool:
         8:
             hud.show_heroes(hud.show_menu)
         9:
+            hud.menu_requested.emit()
+        10:
+            # "Graphics: simple": code-drawn street blocks, hero and enemies.
+            _main.save.data["sprites"] = false
+            hud.settings_changed.emit()
+            hud.start_requested.emit("story")
+            w.invulnerable = true
+            _sim(120)
+        11:
+            # Code-drawn forest (trees).
+            hud.close_panel()
+            w.player.pending = 0
+            w.load_chapter(3)
+            _sim(80)
+        12:
+            # Code-drawn pitch (hoops and stands).
+            hud.close_panel()
+            w.player.pending = 0
+            w.load_chapter(4)
+            _sim(80)
+        13:
+            _main.save.data["sprites"] = true
+            hud.settings_changed.emit()
             hud.menu_requested.emit()
         _:
             _main.queue_free()

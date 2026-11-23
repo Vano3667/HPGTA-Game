@@ -4,19 +4,24 @@
 
 ## Status
 
-**Current stage:** playable Godot 4.3 game, "v3", on branch `feature/v3-heroes-bosses-meta` (draft PR #2). 15 story stages (10 chapters and 5 story-boss arenas), 3 heroes, 28 spells, 9 fusions, 3 evolutions, 12 synergies, a galleon shop, endless mode, procedural music, Russian and English, and painted art sliced from `assets/visual-kit` at build time. The user installed earlier v3 APKs on a phone and said the game works.
+**Current stage:** playable Godot 4.3 game, "v3", on branch `feature/v3-heroes-bosses-meta` (draft PR #2). 15 story stages (10 chapters and 5 story-boss stages), 3 heroes, 28 spells, 9 fusions, 3 evolutions, 12 synergies, a galleon shop, endless mode, procedural music and sound, Russian and English, painted art sliced from `assets/visual-kit` at build time, and since 2026-11-23 an open world without borders whose obstacles are generated around the hero. The user plays the PR #2 APKs on a phone; the last one he reported on was the interface build (run 45123708489): "the menus all work".
 
 **Repository:** https://github.com/Vano3667/HPGTA-Game (public).
 
 **`main` does not build.** Its scripts fail to parse (`scripts/game/art.gd:145`); every `build` run on `main` since `d0187896` has failed. The user keeps pushing art to `main`; PR CI tests the branch merged with `main`, so that art is picked up. Merging PR #2 repairs `main`. Merge only after the user approves the look on a phone.
 
-**Last verified by CI:** `build` run 45114618505, commit `0dfd7127` (boss poses) merged with `main` `9277cb12`. Both jobs passed: sprite build (68 files), import, `[smoke] PASS`, debug APK.
+**Last verified by CI:** `build` run 45183452206, commit `d503a2ef` (bigger builds, tougher bosses, melodic sound effects). Both jobs passed: sprite build (69 files), fonts 3 of 3, import, `[smoke] PASS`, 0 engine errors, debug APK.
 
-**Not yet confirmed when this file was written:** commit `288548d7` (interface restyle, fonts, level-up screen, Harry's sheet, draw pass in the smoke test), `build` run 45123518238. Read that run before trusting anything in the 2026-11-23 "interface" entry of the session log. The PR #2 description carries the result once it is known.
+**Not confirmed when this file was written:**
 
-**Not verified by anyone:** how the new art and the new interface look. No agent can see images. The obstacle layout, the eight-direction heroes, the boss poses, every cut of a sheet whose figures touch, the fonts, frames and the level-up effect are untested by eye.
+- commit `09bf235a` (open world, generated obstacles, hero visibility, level-up sound), `build` run 45184458087, still running;
+- the commit that adds this file version (smoke test for the open world, code-drawn stages, upgrade pool and sounds). Its new assertions have never run; a red result may be a mistake in the test, not in the game.
 
-**Next concrete step:** read run 45123518238 and fix what it reports. Then the user tries the newest PR #2 APK and reports on: the menus and the level-up screen, obstacle positions and sizes in Diagon Alley, hero turning, Quirrell and Basilisk poses, and whether boss fights feel too short or too long.
+Read both runs before trusting the "open world" entry of the session log. The PR #2 description carries the results once they are known.
+
+**Not verified by anyone:** how anything looks or sounds. No agent can see images or hear audio, and CI renders no frame. That covers the open world (floor tiling, obstacle density, the hero's ring and outline), the new sound effects, and everything listed under "Things only a human can check".
+
+**Next concrete step:** read runs 45184458087 and the one after it; fix what they report. Then the user tries the newest green APK and reports on the items in "Open Work" 1.
 
 ## Approved Brief
 
@@ -28,32 +33,50 @@
 
 Later user requests, all implemented unless listed under "Open Work": pseudo-3D look and sharper rendering; larger hero; particles and weather; Russian and English; 10 levels; 20 more spells with synergies in their own menu; fusions of 2, 3 and 4 spells; galleons and a stat shop; Ron and Hermione; procedural music; endless mode; tutorial and bestiary; five story bosses between levels (Quirrell, Basilisk, Dementor, Nagini, Voldemort); painted sprites and maps; obstacles as separate sprites on an empty floor; more facing directions for the hero; the upgrade choice in the middle of the screen; an effect on gaining a level; a decorative font, frames and styled text in the menus.
 
+Requests of 2026-11-23 13:07 UTC (this session): make the hero stand out from the floor and the obstacles; make bosses last longer (Quirrell and the Basilisk "died very fast"); show the limits on the number of skills and raise them ("at level 50 I could not pick anything and only took the frog"); generate the obstacles procedurally and remove the closed border of a location, so the hero never runs into the "frame" of the map and can keep running around obstacles; make the sounds more melodic.
+
 ## What the Game Contains
 
-- **Stages** (`scripts/data/chapters.gd`): diagon (boss warden), hogwarts, *mirror* (Quirrell), forest (aragog), pitch, *dungeon* (Basilisk), ministry (hex), hogsmeade, *lake* (Dementor), vault (idol), crossroads, *classroom* (Nagini), prison (greyback), tower, *bridge* (Voldemort). Italic stages are duel arenas. A chapter lasts 120 s; one without its own boss ends with a portal.
+- **Stages** (`scripts/data/chapters.gd`): diagon (boss warden), hogwarts, *mirror* (Quirrell), forest (aragog), pitch, *dungeon* (Basilisk), ministry (hex), hogsmeade, *lake* (Dementor), vault (idol), crossroads, *classroom* (Nagini), prison (greyback), tower, *bridge* (Voldemort). Italic stages are boss stages: no waves, the boss walks in after 2.5 s. A chapter lasts 120 s; one without its own boss ends with a portal.
 - **Heroes** (`Spells.HEROES`): Harry (free), Hermione and Ron (120 galleons each).
-- **Spells:** 28, data-driven by archetype. 6 spell slots, 4 passive slots, 5 levels.
+- **Build limits** (`scripts/data/spells.gd`): `WEAPON_SLOTS 8`, `MAX_LEVEL 7` (spells), `PASSIVE_SLOTS 6`, `PASSIVE_MAX 5` (talismans), `EVOLVE_LEVEL 5`. Before this session: 6 slots, 4 slots, level 5 for both. The limits are shown on the level-up screen, the pause screen, the Combos screen, the help screen, in the tag of every upgrade card ("NEW SPELL - slot 3 of 8", "SPELL LEVEL 4 of 7") and as `n/8` and `n/6` in the HUD strip.
+- **Repeatable cards** (`Spells.BOONS`): when fewer than three regular upgrades are left, the choice is filled with Wand Polish (+4% damage), Quick Wrist (-2% cooldowns), Pumpkin Pasty (+12 max HP) and the Chocolate Frog (heal 40). A level-up is never an empty choice. Cooldown reduction is floored at 40% of the base in `Spells.cooldown_mult`; damage has no cap.
 - **Fusions** (`Spells.FUSIONS`): offered as a level-up card when every part is at level `5 - number of parts` or higher; they take no slot.
 - **Synergies:** 12 rules "enemy has status X and is hit by element Y".
 - **Meta** (`Spells.META`): ten permanent upgrades bought with galleons.
-- **Endless mode:** chapters loop, duel arenas are skipped, `tier` raises difficulty.
-- **Obstacles:** `world.obstacles` is a list of rectangles. They block the hero and every enemy, flying ones included. Spells and hostile curses pass through them.
+- **Endless mode:** chapters loop, boss stages are skipped, `tier` raises difficulty.
+- **Text:** `scripts/core/i18n.gd` holds the big table; `scripts/core/i18n2.gd` holds newer rows (keys `x_...`) and falls back to the big table.
+
+## Open World
+
+There is no arena any more. `scripts/game/arena.gd` cuts the ground into chunks of 400 world units (`CHUNK`) and keeps the 5 x 5 chunks around the hero (`KEEP = 2`); `Arena.update(w)` runs every step and does work only when the hero enters another chunk. A chunk is built from `hash(chunk x, chunk y, world.map_seed)`, so a place is the same when the hero comes back during a stage; `load_chapter` draws a new `map_seed`. The hero starts at the centre of chunk (0, 0), which is kept clear.
+
+- **Painted stage** (a floor image exists and "Graphics: painted"): obstacles are the painted sprites `art/gen/prop_<map>_*.png` of that map (`Arena.palette`). Per chunk: a building with 60% chance, 1 to 3 medium things, 2 to 4 small ones, at least 52 units apart, so there is always a way through. The old hand-made `PAINTED` table is gone. `Arena.KNOWN` lists the Diagon Alley files as a fallback for exported builds, where the folder may not be listable.
+- **Only Diagon Alley has painted obstacles.** The other 14 maps have none, so on them the hero walks over an empty repeated floor with nothing to run around. Their floor images are still the old full location paintings (buildings painted in), which will look wrong when repeated. They need what Diagon Alley got: an empty floor in `floors/` and sprites in `props/<map>/`. Nothing else has to change in code; `KNOWN` should get the new names.
+- **Code-drawn stage** (no floor image, or "Graphics: simple"): blocks, trees, hoops and lamps in the chapter's colours, by `layout`.
+- **Floor:** `render._floor` repeats the floor image as tiles, every second one mirrored, so edges always meet on identical pixels. `world.arena` is now only the size of one floor tile. `Chapters.ARENA` is the tile size without a painted floor; `Chapters.DUEL_ARENA` is unused.
+- **Enemies:** spawn just outside the screen (`director.edge_pos`). One that is blocked by an obstacle steps sideways along it, to the left or right by the parity of its id. One left more than `world.LEASH` (640) behind the hero re-enters from the screen edge; this includes bosses. Crystals more than 1500 away are dropped.
+- **Obstacles** block the hero and every enemy, flying ones included. Spells and hostile curses pass through.
+
+## Hero Visibility
+
+`render.gd`: a pulsing cyan ring with two turning gold arcs on the ground under the hero; a dark outline (the sprite drawn four times, offset, in near-black) around the painted sprite; on the additive glow layer a larger pool of light and the sprite once more at half brightness, so he stays brighter than the night veil and shows through an obstacle that stands in front of him. The painted floor is drawn at 84% brightness. All of this is unseen by any agent.
 
 ## Code Map
 
 | Path | Role |
 |---|---|
-| `scripts/main.gd` | Entry point; wires world, HUD, joystick, audio, save; `_level_fx()` (rings, sparks and a light column when play resumes after a level-up) |
-| `scripts/game/world.gd` | Simulation step, collisions, statuses and synergies, gold |
+| `scripts/main.gd` | Entry point; wires world, HUD, joystick, audio, save; `_level_fx()` |
+| `scripts/game/world.gd` | Simulation step, collisions, statuses and synergies, gold, camera |
 | `scripts/game/arsenal.gd` | Automatic spells and fusions |
 | `scripts/game/director.gd` | Waves, elites, hazards, boss state machine (`""`, `tell`, `dash`) |
-| `scripts/game/arena.gd` | Arena layouts; `PAINTED` table places painted obstacles per map |
-| `scripts/game/render.gd` | All drawing passes; painted obstacles are sorted against the hero by `base` |
+| `scripts/game/arena.gd` | Endless chunk generator: painted and code-drawn obstacles |
+| `scripts/game/render.gd` | All drawing passes; floor tiling; hero ring and outline |
 | `scripts/game/art.gd` | Heroes, enemies and bosses: painted sprite if present, else code-drawn |
 | `scripts/core/sprites.gd` | Loads `res://art/gen/*`; direction sectors with hysteresis; mirroring |
-| `scripts/data/*.gd` | Stages, enemies and bosses, spells, fusions, heroes, upgrades |
-| `scripts/core/i18n.gd`, `music.gd`, `sfx.gd`, `save.gd` | Text rows `[English, Russian]`, audio, save |
-| `scripts/ui/style.gd` | Fonts, theme, button, frame and card styles, drawn ornaments (diamonds, dividers, corner brackets, sparkles) |
+| `scripts/data/*.gd` | Stages, enemies and bosses, spells, fusions, heroes, upgrades, limits |
+| `scripts/core/i18n.gd`, `i18n2.gd`, `music.gd`, `sfx.gd`, `save.gd` | Text rows `[English, Russian]`, audio, save |
+| `scripts/ui/style.gd` | Fonts, theme, button, frame and card styles, drawn ornaments |
 | `scripts/ui/hud.gd`, `joystick.gd` | HUD strip, all menu panels and their animated backdrop, one-thumb stick |
 | `tools/build_sprites.gd` | Slices the masters into `art/gen/` (git-ignored) |
 | `tests/smoke_test.gd` | Headless bot test used by CI, followed by a short "draw pass" over the real scene |
@@ -66,23 +89,25 @@ godot --headless --path . --import
 godot --headless --path . -s res://tests/smoke_test.gd
 ```
 
-The last step of the CI test job prints the font count, the draw-pass line and a "sprite build summary"; read them after every art or interface change.
+## Sound
+
+`scripts/core/sfx.gd` synthesises 22 streams on a worker thread at start (at once in headless runs). Everything is bell and pluck tones in A minor pentatonic, which fits the keys of the three music loops. Crystals climb an eight-note scale while the hero keeps collecting (the run resets after 1.1 s without a pickup); the wand cycles through four notes. Ids: `wand`, `stupefy`, `patronus`, `fire`, `ice`, `hurt`, `gem`, `warn`, `burst`, `boss_down`, `level` (a short charm chime that three spells use) and `levelup` (the level-up arpeggio, emitted by `world`). Music (`music.gd`) was not changed. Nobody has heard any of it.
 
 ## Interface
 
-- **Fonts.** The workflow downloads three files from `github.com/google/fonts` at a fixed commit into `art/gen/` before the import: `font_title.ttf` (Yeseva One), `font_body.ttf` and `font_bold.ttf` (Philosopher Regular and Bold). All three cover Cyrillic and are under the SIL Open Font License. A local checkout has no fonts unless you fetch them the same way; `style.gd` then falls back to the engine font and nothing else changes. To use other fonts, change the three `fetch` lines in both jobs of `.github/workflows/build.yml`. The help screen names the fonts and the licence; before a public release the full licence text should ship with the game.
-- **Panels.** `hud._panel()` builds a dimmed screen with one framed column (`PanelContainer` with `Style.panel_box`, corner brackets drawn on top). `low = true` keeps the frame at the bottom for the thumb (pause, stage clear, summary, heroes); the main menu and the level-up choice are centred. Long screens call `_scroll()`, which makes the frame fill the height.
-- **Level-up.** `show_levelup()` is centred. Behind the frame `_backdrop("level")` draws, additively: a flash (off when the "flash" setting is off), a glow, turning rays, three expanding rings, a burst of sparks and rising sparkles. The frame fades in over 0.22 s. A transparent guard swallows taps for the first 0.4 s, because the thumb is on the screen when a level arrives and the cards now sit under it. Cards are tinted by `Style.kind_color(c.kind)`.
-- **Main menu.** `_backdrop("menu")`: a dark blue gradient, a faint glow and rays behind the title, rising sparkles. The frame is half transparent so the backdrop shows through.
-- The draw callbacks of the interface cannot be judged in CI beyond "no script error" (see "Testing").
+- **Fonts.** The workflow downloads three files from `github.com/google/fonts` at a fixed commit into `art/gen/` before the import: `font_title.ttf` (Yeseva One), `font_body.ttf` and `font_bold.ttf` (Philosopher Regular and Bold). All three cover Cyrillic and are under the SIL Open Font License. A local checkout has no fonts unless you fetch them the same way; `style.gd` then falls back to the engine font. The help screen names the fonts and the licence; before a public release the full licence text should ship with the game.
+- **Panels.** `hud._panel()` builds a dimmed screen with one framed column. `low = true` keeps the frame at the bottom for the thumb (pause, stage clear, summary, heroes); the main menu and the level-up choice are centred. Long screens call `_scroll()`.
+- **Level-up.** Centred, with an additive backdrop (flash, glow, rays, rings, sparks). A transparent guard swallows taps for the first 0.4 s. The limits line sits under the heading. With three cards and the limits line the frame is about 600 units tall on an 854-unit screen; whether long Russian card texts still fit is unseen.
 
 ## Testing
 
-`tests/smoke_test.gd` first runs everything in one `_process` call (data checks, bot runs, panels in both languages). It then builds the real scene once more and returns `false` from `_process` for nine frames, changing what is on screen each frame: main menu, a story run, the level-up screen, Quirrell's arena, the Basilisk's arena, pause, bestiary, hero select, menu. It counts `draw` signals of the HUD and the world and prints `[smoke] draw pass: N frames; the HUD drew X times, the arena Y times`. If X and Y are 0, headless Godot did not send draw notifications and the pass proved nothing about draw code. A script error in any draw callback fails the CI job through the `SCRIPT ERROR` grep.
+`tests/smoke_test.gd` runs everything in one `_process` call first: data and text checks, a mortal bot, an invulnerable bot through all 15 stages, three endless stages, a 55-second walk in one direction across the open world, all 15 stages with code-drawn graphics, synergies, fusions, the shop, a checkpoint round trip and the upgrade pool. Then it opens every panel in both languages. Then it builds the real scene once more and returns `false` from `_process` for a dozen frames, changing what is on screen each frame (menu, a run, level-up, two boss stages, pause, bestiary, heroes, then three code-drawn stages) so the draw code runs; it prints how often the HUD and the arena drew. A script error anywhere fails the CI job through the `SCRIPT ERROR` grep.
+
+What this cannot show: whether anything looks or sounds right.
 
 ## Art Pipeline
 
-Masters live in `assets/visual-kit/` (it has `.gdignore`). They are never modified. File names are matched ignoring case, stray spaces and a doubled extension (`name .png`, `name.png.png`). File formats the tool understands:
+Masters live in `assets/visual-kit/` (it has `.gdignore`). They are never modified. File names are matched ignoring case, stray spaces and a doubled extension (`name .png`, `name.png.png`).
 
 | Master | Runtime file | Notes |
 |---|---|---|
@@ -90,26 +115,26 @@ Masters live in `assets/visual-kit/` (it has `.gdignore`). They are never modifi
 | `sprites/boss-NN-<name>-8dir-idle.png` plus one attack row | `boss8_<id>.png` | Same layout. Attack row: Quirrell `-cast` (every wind-up), Basilisk `-gaze` (the gaze wind-up) |
 | `sprites/boss-02-cockatrice-basilisk-top-move.png`, `-top-lunge.png` | `top_basilisk_*.png` | One figure, true top-down, heading right; rotated in code while moving or dashing |
 | `sprites/mobs/<name>.png` (or `<name> v2.png`) | `mob_<name>.png` | One enemy per file; overrides the atlas cell of the same name |
-| `props/<map>/<type>-<size>-<name>.png` | `prop_<map>_<file>.png` | type `wall`, `low`, `pit`, `deco`; size `s`, `m`, `l`, `xl` (24, 52, 100, 180 world units wide) |
-| `floors/<map>.png` or `locations/<map>.png` | `map_<map>.png` | Arena floor at scale 0.6; `floors/` wins |
+| `props/<map>/<type>-<size>-<name>.png` | `prop_<map>_<file>.png` | type `wall`, `low`, `pit`, `deco`; size `s`, `m`, `l`, `xl` (24, 52, 100, 180 world units wide). The generator places them by size class |
+| `floors/<map>.png` or `locations/<map>.png` | `map_<map>.png` | Floor tile at scale 0.6, repeated mirrored; `floors/` wins |
 | old atlases and single boss pictures | `hero_<id>.png`, `boss_<id>.png` | Fallbacks |
 
-Results of the last verified sprite build (run 45114618505):
+Results of the last verified sprite build (run 45183452206):
 
-- All 10 core enemies come from `sprites/mobs/` (the caster from `caster v2.png`). All 9 Diagon Alley props and the floor were written.
-- `hero8_hermione`: three clean rows. `hero8_ron`: clean idle; figures touch in both walk sheets (cut crossed up to 6 px of art in walk-a, 0 px in walk-b).
-- `boss8_quirrell`: figures touch in both sheets (0 px crossed in idle, up to 7 px in cast). `boss8_basilisk`: clean idle; figures touch in the gaze sheet (0 px crossed).
-- `hero8_harry` was skipped in that run: the idle file did not exist yet. The user then pushed `hero-wizard-8dir-idle.png.png` (doubled extension) and `hero-wizard-8dir-walk-a.png` (`main` `1f64950f`); commit `288548d7` teaches the tool to find such names. Whether Harry's sheet is built is in run 45123518238. There is no `walk-b` for Harry: the user's image generator refused it for likeness to third-party content.
-- `ron-pseudo3d-8pose-atlas.png` and `hero-wizard-forward-wand-standing.png` were deleted by the user; the tool skips them.
+- `hero8_harry` is built from `hero-wizard-8dir-idle.png.png` and `hero-wizard-8dir-walk-a.png`. The idle sheet is clean. In the walk sheet all five figures touch (one shape); the cut crossed up to 8 px of art, the worst of all sheets, so Harry's step frames are the most likely to show a clipped wand or a sliver of a neighbour. There is no `walk-b` (the user's image generator refused it), so his walk alternates stand and one step.
+- `hero8_hermione`: three clean rows. `hero8_ron`: clean idle; figures touch in both walk sheets (up to 6 px and 0 px crossed).
+- `boss8_quirrell`: figures touch in both sheets (0 px and up to 7 px). `boss8_basilisk`: clean idle; figures touch in the gaze sheet (0 px).
+- All 10 core enemies come from `sprites/mobs/`. All 9 Diagon Alley props and the floor were written.
 
-When figures touch, the tool cuts at the emptiest column near each boundary and prints a WARNING with the number of pixels crossed. "0 px" means the cut ran through empty columns. A few pixels can mean a clipped wand tip or a sliver of the neighbour. The clean fix is a regenerated sheet with wider gaps.
+When figures touch, the tool cuts at the emptiest column near each boundary and prints a WARNING with the number of pixels crossed. "0 px" means the cut ran through empty columns. The clean fix is a regenerated sheet with wider gaps.
 
-Things only a human eye can check:
+Things only a human can check:
 
 - Order of the five figures in every sheet (assumed to follow the prompt).
-- The `PAINTED` layout in `arena.gd` and the solid part of each prop (`hit`: 78% of a building's height, the base of a lamp post, the inner part of a pit).
-- Old four-direction hero column order (`HEROES[...].cols` in `build_sprites.gd`).
-- Mirrored sprites are drawn with a flip transform around the feet.
+- Obstacle density and the solid part of each prop (`hit` in `arena._sprite`: 78% of a building's height, the base of a lamp post, the inner part of a pit).
+- Whether the mirrored floor tiling looks acceptable.
+- Whether the hero's ring, outline and glow are enough, or too much.
+- How the sounds and the music sound together.
 
 ## Balance
 
@@ -117,21 +142,25 @@ The smoke bot is invulnerable, walks in circles and picks cards round-robin, so 
 
 | Run | Boss health | Bot build | Result |
 |---|---|---|---|
-| 44913528986 | old (750 to 9800) | wand, expelliarmus, depulso, arresto, aguamenti, riddikulus | 9 of 10 bosses still alive after 120 s |
-| 45108219487 | current (480 to 5200) | wand, expelliarmus, stupefy, bombarda, reducto, solem | every boss dead in 10 to 33 s |
+| 44913528986 | first values (750 to 9800) | wand, expelliarmus, depulso, arresto, aguamenti, riddikulus | 9 of 10 bosses still alive after 120 s |
+| 45108219487 | lowered (480 to 5200) | wand, expelliarmus, stupefy, bombarda, reducto, solem | every boss dead in 10 to 33 s |
+| 45183452206 | current (1200 to 40000) | wand, expelliarmus, finite, glacius, riddikulus, incarcerous, leviosa, protego | warden dead in 68 s; the other 9 still alive after 120 s |
 
-Build quality changes boss damage about sixfold, so boss health cannot be tuned from bot logs alone. Current values are the lowered ones from the first run. They are probably too low for a good build. Decision: leave them until the user says how the fights feel. A build is complete after 49 picks; later level-ups only heal.
+The user, playing the lowered values, said Quirrell (1500) and the Basilisk (2900) "died very fast". Current health: warden 1200, quirrell 5500, aragog 8000, basilisk 13000, hex 16000, dementor 19000, idol 22000, nagini 26000, greyback 28000, voldemort 40000. That is about 2.5 to 10 times the lowered values. It is a guess: build quality changes boss damage about sixfold in the bot logs, and the third run shows that a build of control spells cannot kill most bosses in two minutes at these values. A player with a poor build may find late bosses very long. Decision: ship the guess and correct it from the user's report of how long the Quirrell and Basilisk fights now take. Bosses also got a little harder to hide from: they re-enter at the screen edge when left 640 units behind.
+
+The regular upgrade pool was 49 picks with the old limits (the user ran out at level 50). With the new limits the bot log printed 87, a number that may be a few picks off because the old test stopped on a random card; the new test prints the exact figure. After that, every level offers repeatable cards.
 
 ## Open Work
 
-1. Confirm run 45123518238; then user feedback on the newest APK and fixes; merge PR #2 when the user approves.
-2. A second step sheet for Harry (needs a less recognizable design or another generator). Regenerate the sheets whose figures touch if they look clipped.
-3. Obstacles for the other 14 maps: the user generates an empty floor and props per map, then add a `PAINTED` entry.
-4. Flying enemies should cross pits; walls should stop spells. Both need per-obstacle flags in `world.push_out` and the shot update.
-5. Five-direction sheets for Dementor, Nagini, Voldemort; top-down poses for Nagini.
-6. Boss health once there is human feedback; a repeatable late-game card; a smarter test bot.
-7. Interface follow-ups, all pending the user's eye: spell icons on the cards, an upgrade card that grows with long text (cards have a fixed minimum height of 136), the full font licence text in the game.
-8. Release signing (below) is not configured.
+1. Confirm the two pending CI runs. Then the user's report on the newest green APK: does the hero stand out; how the open world feels (obstacle density, enemies getting around buildings, the repeated floor); how long Quirrell and the Basilisk take; whether the limits are clear; how the sounds are. Merge PR #2 when the user approves.
+2. Floors and obstacle sprites for the other 14 maps (see "Open World"). Until then those stages are empty ground.
+3. Flying enemies should cross pits; walls should stop spells. Both need per-obstacle flags in `world.push_out` and the shot update.
+4. Enemies only sidestep; a deep pocket between two buildings can still hold a few until the leash pulls them out. A real path search is not implemented.
+5. A second step sheet for Harry; regenerate the sheets whose figures touch if they look clipped.
+6. Five-direction sheets for Dementor, Nagini, Voldemort; top-down poses for Nagini.
+7. `README.md` still describes bordered arenas and the old limits (6 spells, 4 talismans, level 5). Update it.
+8. Interface: spell icons on the cards; cards that grow with long text; the full font licence text in the game.
+9. Release signing (below) is not configured.
 
 ## Art and References
 
@@ -165,16 +194,15 @@ Build quality changes boss damage about sixfold, so boss health cannot be tuned 
 ### 2026-11-23 — obstacles, eight directions, boss poses
 
 - The user pushed to `main`: an empty Diagon Alley floor, 9 props, 10 single-enemy files, five-direction sheets for Hermione, Ron, Quirrell and the Basilisk, two top-down Basilisk poses, a transparent core enemy atlas.
-- `a56c5093`: `tools/build_sprites.gd` learned the formats in the table above. CI run 45108219487 passed.
-- `6720709d`: `arena.gd` places painted obstacles in Diagon Alley with collision; `render.gd` draws them in front of or behind the hero; `sprites.gd` got eight facing sectors with hysteresis, a four-phase walk cycle and in-place mirroring; the workflow prints a sprite summary. CI run 45108826126 passed.
-- `0dfd7127`: `art.gd` and `sprites.gd` show boss sheets and rotating top-down poses; `build_sprites.gd` cuts touching figures at the emptiest column instead of into equal parts. CI run 45114618505 passed (test and APK).
-- Decisions: boss health left alone (see "Balance"). The corrected back pose was not cut out of an opaque background by guesswork; the user was asked for clean art instead. Pits currently block flying enemies too.
+- `a56c5093` (CI run 45108219487 passed), `6720709d` (run 45108826126 passed), `0dfd7127` (run 45114618505 passed): sprite formats, hand-placed painted obstacles in Diagon Alley, eight facing sectors with hysteresis, boss sheets and top-down poses, emptiest-column cut.
 
-### 2026-11-23 — interface (commit `288548d7`, CI result not known when written)
+### 2026-11-23 — interface
 
-- User request: Harry's new sheets were not picked up; put the upgrade choice in the middle; add an effect on gaining a level; a decorative font, frames and styled text for the upgrade menu and the main menu.
-- New `scripts/ui/style.gd`; `scripts/ui/hud.gd` rewritten around it (see "Interface"); `scripts/main.gd` adds `_level_fx()` and gives the arena's floating texts the interface font.
-- `tools/build_sprites.gd`: `_norm()` and `_find()` accept `name.png.png`; props and maps use the same rule.
-- `.github/workflows/build.yml`: font download step in both jobs; it only warns if the download fails. The summary step prints the font count, the draw-pass line and the first engine errors.
-- `tests/smoke_test.gd`: the draw pass described under "Testing".
-- Decisions: fonts are downloaded at build time because binary files cannot be committed through the tool this agent uses. The cards moved under the thumb, so a 0.4 s tap guard was added without asking. Bottom-anchored screens (pause, stage clear, summary, heroes) stayed at the bottom for one-thumb reach.
+- `288548d7` and `37942eb7`: `scripts/ui/style.gd`, restyled `hud.gd`, centred level-up screen with a burst of light, fonts downloaded by the workflow, `name.png.png` accepted by the sprite tool, draw pass in the smoke test. CI runs 45123518238 and 45123708489 passed (test and APK). The user then said the menus all work.
+
+### 2026-11-23 — limits, bosses, sounds, open world
+
+- `d503a2ef`: `spells.gd` (limits, repeatable cards, limits line), new `i18n2.gd`, `enemies.gd` (boss health), `sfx.gd` (rewritten), `hud.gd` (limits shown). CI run 45183452206 passed (test and APK).
+- `09bf235a`: `arena.gd` rewritten as the chunk generator; `world.gd`, `director.gd` and `render.gd` lose every border; enemies sidestep and are leashed; hero ring, outline and glow; `sfx.gd` gets a separate `levelup` sound. CI run 45184458087 was still running when this was written.
+- This commit: `tests/smoke_test.gd` (open world walk, code-drawn stages, exact upgrade pool, sound streams, three more draw frames) and this file. Unverified.
+- Decisions made without asking: limits 8 and 6, spell level 7; repeatable bonus cards instead of a still higher cap; boss health as in "Balance"; boss stages are open ground too (the user asked for no frames anywhere); the hand-made Diagon Alley layout was dropped for the generator; enemies and bosses left far behind re-enter at the screen edge; music left as it was, only the effects were redone.

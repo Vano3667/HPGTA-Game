@@ -1,5 +1,6 @@
 extends RefCounted
 ## Pacing: escalating waves, elites, chapter hazards, boss duels and boss behaviour.
+## The world has no borders, so everything here is placed relative to the hero.
 
 const Chapters = preload("res://scripts/data/chapters.gd")
 const I18n = preload("res://scripts/core/i18n.gd")
@@ -61,7 +62,7 @@ func step(delta: float) -> void:
         elite_t -= delta
         if elite_t <= 0.0:
             elite_t = 35.0
-            w.spawn_enemy(_pick(ch), _edge_pos(), true, mult)
+            w.spawn_enemy(_pick(ch), edge_pos(), true, mult)
         if w.time >= Chapters.SURVIVE_TIME:
             # The crowd is dispelled either way, so the duel stays readable.
             boss_spawned = true
@@ -79,7 +80,7 @@ func step(delta: float) -> void:
         _hazards(delta, ch.hazard)
 
 
-# A boss arena: no waves, the story boss walks in at once and only a trickle of minions joins.
+# A boss stage: no waves, the story boss walks in at once and only a trickle of minions joins.
 func _duel(delta: float, ch: Dictionary) -> void:
     if not boss_spawned:
         if w.time >= 2.5:
@@ -130,7 +131,7 @@ func _spawn_batch(ch: Dictionary, count: int, mult: float) -> void:
     for i in count:
         if w.enemies.size() + w.pending.size() >= w.MAX_ENEMIES:
             return
-        w.spawn_enemy(_pick(ch), _edge_pos(), false, mult)
+        w.spawn_enemy(_pick(ch), edge_pos(), false, mult)
 
 
 func _pick(ch: Dictionary) -> String:
@@ -148,29 +149,21 @@ func _pick(ch: Dictionary) -> String:
     return ch.enemies[0][0]
 
 
-# Enemies enter from just outside the visible screen around the player (or from the arena rim).
-func _edge_pos() -> Vector2:
+## A point just outside the visible screen around the hero: where enemies enter, and where the
+## ones that were left far behind come back in.
+func edge_pos() -> Vector2:
     var pp: Vector2 = w.player.pos
-    var a: Vector2 = w.arena
     var vs: Vector2 = w.view_world
     var rng: RandomNumberGenerator = w.rng
     var half: Vector2 = vs * 0.5 + Vector2(40.0, 30.0)
-    var pos: Vector2 = pp
-    for attempt in 5:
-        var side: int = rng.randi() % 4
-        if side == 0:
-            pos = pp + Vector2(rng.randf_range(-half.x, half.x), -half.y)
-        elif side == 1:
-            pos = pp + Vector2(rng.randf_range(-half.x, half.x), half.y)
-        elif side == 2:
-            pos = pp + Vector2(-half.x, rng.randf_range(-half.y, half.y))
-        else:
-            pos = pp + Vector2(half.x, rng.randf_range(-half.y, half.y))
-        pos.x = clampf(pos.x, 10.0, a.x - 10.0)
-        pos.y = clampf(pos.y, 10.0, a.y - 10.0)
-        if absf(pos.x - pp.x) > half.x - 40.0 or absf(pos.y - pp.y) > half.y - 40.0:
-            break
-    return pos
+    var side: int = rng.randi() % 4
+    if side == 0:
+        return pp + Vector2(rng.randf_range(-half.x, half.x), -half.y)
+    if side == 1:
+        return pp + Vector2(rng.randf_range(-half.x, half.x), half.y)
+    if side == 2:
+        return pp + Vector2(-half.x, rng.randf_range(-half.y, half.y))
+    return pp + Vector2(half.x, rng.randf_range(-half.y, half.y))
 
 
 # ---------------------------------------------------------------- hazards
@@ -404,12 +397,8 @@ func _boss_fire(e: Dictionary) -> void:
             # Apparate to the far side of the player, then strike again quickly.
             var pp: Vector2 = w.player.pos
             var away: Vector2 = pp - e.pos
-            var a: Vector2 = w.arena
             w.burst(e.pos, col, 14, 120.0)
-            var to: Vector2 = pp + away.normalized() * 110.0
-            to.x = clampf(to.x, 30.0, a.x - 30.0)
-            to.y = clampf(to.y, 30.0, a.y - 30.0)
-            e.pos = w.push_out(to, e.r)
+            e.pos = w.push_out(pp + away.normalized() * 110.0, e.r)
             w.burst(e.pos, col, 14, 120.0)
             e.cd = 0.5
         "summon":

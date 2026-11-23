@@ -1,7 +1,7 @@
 extends Node2D
 ## One run of Hex District: gameplay state and the simulation step.
-## Rendering lives in render.gd, arena construction in arena.gd. The UI listens to signals;
-## step() can also be driven headlessly (tests/smoke_test.gd).
+## Rendering lives in render.gd, the endless arena generator in arena.gd. The UI listens to
+## signals; step() can also be driven headlessly (tests/smoke_test.gd).
 
 signal level_up(choices)
 signal chapter_cleared(index)
@@ -32,6 +32,8 @@ const CELL := 56.0
 const HUD_STRIP := 48.0
 ## World zoom: everything in the arena is drawn 1.5x larger than in v1.
 const ZOOM := 1.5
+## An enemy left this far behind the hero re-enters from just outside the screen.
+const LEASH := 640.0
 ## Statuses that stop an enemy from acting.
 const HOLD := ["stun", "petrify", "levitate", "root"]
 const AMB_RATE := {"rain": 55.0, "storm": 60.0, "snow": 16.0, "leaves": 5.0, "wind": 9.0, "fireflies": 6.0, "drip": 7.0, "dust": 7.0, "embers": 9.0, "sparks": 9.0}
@@ -50,8 +52,9 @@ var cam := Vector2.ZERO
 var mode := "story"
 ## Difficulty step: the stage index in story mode, the number of stages survived in endless mode.
 var tier := 0
+## Size of one floor tile in world units (the painted floor image repeats, mirrored, without end).
+## The world itself has no borders.
 var arena := Vector2(1400.0, 1900.0)
-var inset := 12.0
 var run_gold := 0
 var gold_bank := 0
 var seen := {}
@@ -72,10 +75,18 @@ var zones: Array = []
 var hazards: Array = []
 var fx: Array = []
 var parts: Array = []
+# The four lists below are rebuilt by arena.gd from the chunks around the hero.
 var obstacles: Array = []
 var props: Array = []
 var decor: Array = []
 var lights: Array = []
+## Generated chunks (Vector2i -> lists), the painted obstacles of this map, the seed of this stage,
+## where the hero starts (kept clear of obstacles) and the chunk the hero was in last.
+var chunks := {}
+var palette: Array = []
+var map_seed := 0
+var spawn_pos := Vector2.ZERO
+var chunk_at := Vector2i(1 << 20, 0)
 var grid := {}
 var boss = null
 var shake := 0.0
@@ -139,17 +150,23 @@ func _process(delta: float) -> void:
     if active:
         step(delta)
     _update_camera()
+    queue_redraw()
     _main.queue_redraw()
     _glow.queue_redraw()
     _top.queue_redraw()
 
 
+# The backdrop and, for code-drawn stages, the tiled ground. Both follow the camera: they cover
+# the screen plus a margin and start on a multiple of the tile size, so the pattern stays put.
 func _draw() -> void:
     if chapter.is_empty():
         return
-    draw_rect(Rect2(Vector2(-600.0, -600.0), arena + Vector2(1200.0, 1200.0)), Color("07090b"))
+    var first := Vector2(floorf((cam.x - view_world.x * 0.5) / 64.0) - 2.0, floorf((cam.y - view_world.y * 0.5) / 64.0) - 2.0)
+    var cells := Vector2(ceilf(view_world.x / 64.0) + 5.0, ceilf(view_world.y / 64.0) + 5.0)
+    var rect := Rect2(first * 64.0, cells * 64.0)
+    draw_rect(rect, Color("07090b"))
     if floor_tex == null and ground_tex != null:
-        draw_texture_rect(ground_tex, Rect2(Vector2.ZERO, arena), true)
+        draw_texture_rect(ground_tex, rect, true)
 
 
 func _on_main_draw() -> void:
@@ -234,24 +251,22 @@ func load_chapter(index: int) -> void:
     _dead = false
     _cleared = false
     storm_flash = 0.0
-    var duel: bool = chapter.get("duel", false)
     Sprites.forget("map_")
     floor_tex = Sprites.tex("map_" + str(chapter.get("map", "")))
     if floor_tex != null:
-        # Painted arena: the map image is the floor; the hero stays off its outer rim.
         arena = Vector2(floor_tex.get_size()) * Chapters.MAP_SCALE
-        inset = arena.x * 0.06
     else:
-        arena = Chapters.DUEL_ARENA if duel else Chapters.ARENA
-        inset = 12.0
-    player.pos = arena * (Vector2(0.5, 0.7) if duel else Vector2(0.5, 0.5))
+        arena = Chapters.ARENA
+    # A new stage is a new stretch of open ground: new seed, hero in the middle of a clear spot.
+    map_seed = rng.randi() % 1000000
+    spawn_pos = Vector2(Arena.CHUNK, Arena.CHUNK) * 0.5
+    player.pos = spawn_pos
     player.iframe = 1.5
     player.slow = 1.0
     if run_time > 0.0:
         player.hp = minf(player.max_hp, player.hp + player.max_hp * 0.4)
     cam = player.pos
-    Arena.build(self)
-    _index_obstacles()
+    Arena.begin(self)
     ground_tex = Arena.ground(chapter, chapter_index)
     refresh_synergies()
     arsenal.reset()
@@ -284,7 +299,7 @@ func portal() -> void:
     add_fx({"kind": "ring", "pos": pp, "r0": 10.0, "r1": 160.0, "col": Color("f0d278"), "life": 0.8, "width": 3.0})
     add_fx({"kind": "text", "pos": pp + Vector2(-40.0, -30.0), "text": I18n.t("ui_portal"), "col": Color("f0d278"), "life": 2.0})
     burst(pp, Color("f0d278"), 24, 150.0)
-    sound.emit("level")
+    sound.emit("levelup")
 
 
 func add_gold(n: int) -> void:
@@ -324,6 +339,7 @@ func step(delta: float) -> void:
         enemies.append_array(pending)
         pending = []
     _update_player(delta)
+    Arena.update(self)
     _rebuild_grid()
     director.step(delta)
     arsenal.step(delta)
@@ -360,6 +376,7 @@ func _resolve_events() -> void:
             chapter_cleared.emit(chapter_index)
     elif player.pending > 0:
         active = false
+        sound.emit("levelup")
         level_up.emit(Spells.choices(player, rng))
 
 
@@ -438,6 +455,7 @@ func random_enemy(pos: Vector2, max_dist: float):
     return nearest_enemy(pos, max_dist)
 
 
+# Spatial index of the solid rectangles; arena.gd calls this whenever the chunks change.
 func _index_obstacles() -> void:
     _ogrid = {}
     for o in obstacles:
@@ -497,12 +515,9 @@ func spawn_enemy(type: String, pos: Vector2, elite: bool, hp_mult: float = 1.0) 
 
 func spawn_boss(key: String) -> void:
     var pp: Vector2 = player.pos
-    var pos: Vector2 = pp + Vector2(0.0, -200.0)
-    if pos.y < 60.0:
-        pos.y = pp.y + 200.0
-    pos.x = clampf(pos.x, 60.0, arena.x - 60.0)
-    pos.y = clampf(pos.y, 60.0, arena.y - 60.0)
-    boss = Enemies.make_boss(key, pos, _next_id)
+    boss = Enemies.make_boss(key, pp + Vector2(0.0, -200.0), _next_id)
+    boss.pos = push_out(boss.pos, boss.r)
+    var pos: Vector2 = boss.pos
     if mode == "endless":
         var k: float = 1.0 + 0.8 * floorf(tier / 10.0)
         boss.hp *= k
@@ -690,7 +705,7 @@ func damage_player(amount: float) -> void:
         blast(pp, 140.0, 40.0, 260.0, "light", "stun", 1.5)
         add_fx({"kind": "ring", "pos": pp, "r0": 10.0, "r1": 140.0, "col": Color("ffd27a"), "life": 0.6, "width": 4.0})
         add_fx({"kind": "text", "pos": pp + Vector2(-36.0, -30.0), "text": I18n.t("ui_revive"), "col": Color("ffd27a"), "life": 1.6})
-        sound.emit("level")
+        sound.emit("levelup")
     else:
         player.hp = 0.0
         _dead = true
@@ -750,6 +765,7 @@ func _gain_xp(amount: int) -> void:
 
 # ---------------------------------------------------------------- simulation
 
+# The hero walks anywhere: only obstacles stop him, there is no edge of the map.
 func _update_player(delta: float) -> void:
     var slow: float = player.slow
     player.slow = 1.0
@@ -757,8 +773,6 @@ func _update_player(delta: float) -> void:
     if mv.length() > 1.0:
         mv = mv.normalized()
     var pos: Vector2 = player.pos + mv * Spells.move_speed(player) * slow * delta
-    pos.x = clampf(pos.x, inset, arena.x - inset)
-    pos.y = clampf(pos.y, inset, arena.y - inset)
     player.pos = push_out(pos, player.r)
     if mv.length() > 0.1:
         player.facing = mv.normalized()
@@ -773,7 +787,6 @@ func _update_player(delta: float) -> void:
 
 func _update_enemies(delta: float) -> void:
     var pp: Vector2 = player.pos
-    var a: Vector2 = arena
     var alive: Array = []
     for e in enemies:
         if e.hp <= 0.0:
@@ -823,9 +836,18 @@ func _update_enemies(delta: float) -> void:
                     n += 1
                     if n >= 6:
                         break
+        var want: Vector2 = pos
         pos = push_out(pos, e.r)
-        pos.x = clampf(pos.x, 8.0, a.x - 8.0)
-        pos.y = clampf(pos.y, 8.0, a.y - 8.0)
+        if e.hold <= 0.0 and not pos.is_equal_approx(want):
+            # Blocked by an obstacle: step sideways along it. Every enemy keeps to its own side,
+            # so a crowd flows around a building on both sides.
+            var to_hero: Vector2 = (pp - pos).normalized()
+            var turn: float = 1.0 if int(e.id) % 2 == 0 else -1.0
+            pos = push_out(pos + Vector2(-to_hero.y, to_hero.x) * turn * e.speed * 0.8 * delta, e.r)
+        if pos.distance_squared_to(pp) > LEASH * LEASH:
+            # Left far behind in the open world: come back in from just outside the screen.
+            pos = push_out(director.edge_pos(), e.r)
+            e.kb = Vector2.ZERO
         e.pos = pos
         if e.hold <= 0.0 and not feared and pos.distance_to(pp) < e.r + player.r:
             damage_player(e.dmg)
@@ -995,6 +1017,9 @@ func _update_gems(delta: float) -> void:
                 _gain_xp(int(g.xp))
             spawn_part(pp, Vector2(rng.randf_range(-20.0, 20.0), -40.0), 0.35, Color("f0d278") if g.gold > 0 else Color("67dcf4"), 1.5, true)
             continue
+        if l > 1500.0 and not pull_all:
+            # Left far behind in the open world: gone.
+            continue
         if l < reach or pull_all:
             g.pos += d / l * 300.0 * delta
         keep.append(g)
@@ -1063,20 +1088,11 @@ func _ambient(delta: float) -> void:
             sound.emit("burst")
 
 
+# The camera simply follows the hero; there is no edge to stop at.
 func _update_camera() -> void:
     if player.is_empty():
         return
-    var half: Vector2 = view_world * 0.5
     var c: Vector2 = player.pos
-    # Small painted arenas are centred instead of scrolled.
-    if arena.x <= view_world.x + 40.0:
-        c.x = arena.x * 0.5
-    else:
-        c.x = clampf(c.x, half.x - 20.0, arena.x - half.x + 20.0)
-    if arena.y <= view_world.y + 40.0:
-        c.y = arena.y * 0.5
-    else:
-        c.y = clampf(c.y, half.y - 20.0, arena.y - half.y + 20.0)
     if shake > 0.0 and bool(settings.get("shake", true)):
         c += Vector2(rng.randf_range(-1.0, 1.0), rng.randf_range(-1.0, 1.0)) * shake * 3.0
     cam = c

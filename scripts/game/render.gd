@@ -1,10 +1,14 @@
 extends RefCounted
-## World rendering. Painted arenas use the map image as the floor and painted obstacle sprites;
-## procedural arenas are drawn in a GTA2-like pseudo-3D style (extruded props whose roofs lean away
-## from the screen centre). Sprites are stacked above soft shadows and an additive layer adds
-## lights, glow and particles.
+## World rendering. Painted stages use the map image as an endlessly repeated (mirrored) floor and
+## painted obstacle sprites; code-drawn stages are in a GTA2-like pseudo-3D style (extruded props
+## whose roofs lean away from the screen centre). Sprites are stacked above soft shadows and an
+## additive layer adds lights, glow and particles.
 
 const Art = preload("res://scripts/game/art.gd")
+const Sprites = preload("res://scripts/core/sprites.gd")
+
+## Height of the hero's painted sprite in world units (the same number art.gd draws it with).
+const HERO_H := 40.0
 
 
 ## Soft radial gradient texture (used for lights and the vignette).
@@ -35,10 +39,26 @@ static func _view(w, margin: float) -> Rect2:
     return Rect2(cam - half, half * 2.0)
 
 
+# The painted floor has no edge: the image is laid out as tiles, every second one mirrored, so
+# neighbouring tiles always meet on identical pixels. Slightly darkened so actors stand out.
+static func _floor(ci: CanvasItem, tex: Texture2D, tile: Vector2, view: Rect2) -> void:
+    if tile.x < 8.0 or tile.y < 8.0:
+        return
+    var shade := Color(0.84, 0.84, 0.88)
+    var grown := Rect2(Vector2(-0.25, -0.25), tile + Vector2(0.5, 0.5))
+    for i in range(floori(view.position.x / tile.x), floori(view.end.x / tile.x) + 1):
+        for j in range(floori(view.position.y / tile.y), floori(view.end.y / tile.y) + 1):
+            var fx: bool = posmod(i, 2) == 1
+            var fy: bool = posmod(j, 2) == 1
+            var origin := Vector2((i + (1 if fx else 0)) * tile.x, (j + (1 if fy else 0)) * tile.y)
+            ci.draw_set_transform(origin, 0.0, Vector2(-1.0 if fx else 1.0, -1.0 if fy else 1.0))
+            ci.draw_texture_rect(tex, grown, false, shade)
+    ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
 ## Main pass, drawn on the world's smooth layer "ci" (the tiled ground is drawn by the world itself).
 static func draw(w, ci: CanvasItem) -> void:
     var ch: Dictionary = w.chapter
-    var a: Vector2 = w.arena
     var cam: Vector2 = w.cam
     var t: float = w.run_time
     var hc: bool = bool(w.settings.get("high_contrast", false))
@@ -52,7 +72,7 @@ static func draw(w, ci: CanvasItem) -> void:
 
     # --- floor
     if w.floor_tex != null:
-        ci.draw_texture_rect(w.floor_tex, Rect2(Vector2.ZERO, a), false)
+        _floor(ci, w.floor_tex, w.arena, view)
     for d in w.decor:
         match d.kind:
             "rect":
@@ -61,7 +81,6 @@ static func draw(w, ci: CanvasItem) -> void:
                 ci.draw_rect(d.rect, d.col, false, 2.0)
             "ring":
                 ci.draw_arc(d.pos, d.r, 0.0, TAU, 28, d.col, 2.0)
-    ci.draw_rect(Rect2(Vector2.ZERO, a), edge, false, 3.0)
 
     # --- props on screen: drop shadows now; flat painted ones (pits, decor) go straight on the floor
     var near: Array = []
@@ -153,9 +172,26 @@ static func draw(w, ci: CanvasItem) -> void:
         ci.draw_line(bp - b.vel.normalized() * 7.0, bp, Color(bc, 0.5), 2.0)
         ci.draw_rect(box, bc)
         ci.draw_rect(box, Color(1.0, 1.0, 1.0, 0.9), false, 1.6 if hc else 0.8)
+
+    # --- the hero. He must never get lost in the scenery: a pulsing ring on the ground under his
+    # feet, a dark outline around the painted sprite and (on the glow layer) a rim of light.
     var ghost: bool = pl.iframe > 0.0 and fmod(t * 16.0, 2.0) < 1.0
     var moving: bool = w.move_input.length() > 0.1 and w.active
-    Art.hero(ci, str(pl.get("hero", "harry")), hero_pos, pl.facing, pl.aim, t, ghost, moving)
+    var hid: String = str(pl.get("hero", "harry"))
+    var face: Vector2 = pl.facing
+    var beat: float = 0.5 + 0.5 * sin(t * 5.0)
+    ci.draw_set_transform(hero_pos + Vector2(0.0, 4.0), 0.0, Vector2(1.0, 0.5))
+    ci.draw_circle(Vector2.ZERO, 13.0, Color(0.1, 0.7, 1.0, 0.2))
+    ci.draw_arc(Vector2.ZERO, 13.0 + beat * 1.5, 0.0, TAU, 28, Color(0.55, 0.93, 1.0, 0.95), 1.6)
+    ci.draw_arc(Vector2.ZERO, 17.0 + beat * 1.5, t * 2.0, t * 2.0 + 2.2, 12, Color(1.0, 0.88, 0.45, 0.9), 1.3)
+    ci.draw_arc(Vector2.ZERO, 17.0 + beat * 1.5, t * 2.0 + PI, t * 2.0 + PI + 2.2, 12, Color(1.0, 0.88, 0.45, 0.9), 1.3)
+    ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+    if not ghost:
+        var ink := Color(0.0, 0.0, 0.04, 0.8)
+        for item in [Vector2(1.3, 0.0), Vector2(-1.3, 0.0), Vector2(0.0, 1.3), Vector2(0.0, -1.3)]:
+            var off: Vector2 = item
+            Sprites.actor(ci, "hero_" + hid, hero_pos + Vector2(0.0, 5.0) + off, face, moving, HERO_H, ink, t)
+    Art.hero(ci, hid, hero_pos, face, pl.aim, t, ghost, moving)
 
     # --- painted obstacles in front of the hero, then extruded props (far ones first)
     for p in painted:
@@ -264,8 +300,14 @@ static func glow(w, ci: CanvasItem) -> void:
         var r: float = l.r * (0.94 + 0.06 * sin(t * 7.0 + base.x))
         var lc: Color = l.col
         ci.draw_texture_rect(tex, Rect2(lp - Vector2(r, r), Vector2(r, r) * 2.0), false, Color(lc, 0.5))
-    var pp: Vector2 = w.player.pos
-    ci.draw_texture_rect(tex, Rect2(pp - Vector2(70.0, 70.0), Vector2(140.0, 140.0)), false, Color(1.0, 0.9, 0.72, 0.3))
+    # The hero carries his own pool of light, and his sprite is drawn once more here so it stays
+    # bright after the night veil.
+    var pl: Dictionary = w.player
+    var pp: Vector2 = pl.pos
+    ci.draw_texture_rect(tex, Rect2(pp - Vector2(95.0, 95.0), Vector2(190.0, 190.0)), false, Color(1.0, 0.9, 0.72, 0.4))
+    var moving: bool = w.move_input.length() > 0.1 and w.active
+    var face: Vector2 = pl.facing
+    Sprites.actor(ci, "hero_" + str(pl.get("hero", "harry")), pp + Vector2(0.0, 5.0), face, moving, HERO_H, Color(0.5, 0.5, 0.56, 1.0), t)
     var up := Vector2(0.0, -5.0)
     for s in w.shots:
         var sp: Vector2 = s.pos + up

@@ -4,13 +4,15 @@ extends Node
 ## three music loops), so effects that overlap sound like notes of one instrument, not like noise.
 ## Crystals climb the scale while you keep collecting; the wand cycles through a four-note figure.
 ## Streams are synthesised on a worker thread (in headless runs: at once, so CI executes the code).
+## Ids: wand, stupefy, patronus, fire, ice, hurt, gem, level (a short charm chime that some spells
+## use), levelup (the level-up arpeggio), warn, burst, boss_down.
 
 const RATE := 22050
 # MIDI notes: A5 C6 D6 E6 G6 A6 C7 D7, and E5 G5 A5 G5.
 const GEM := [81, 84, 86, 88, 91, 93, 96, 98]
 const WAND := [76, 79, 81, 79]
 # Long sounds get their own players so quick ones cannot cut them off.
-const LONG := ["level", "boss_down", "patronus"]
+const LONG := ["levelup", "boss_down", "patronus"]
 
 var enabled := true
 var _players: Array = []
@@ -48,6 +50,14 @@ func _ready() -> void:
 func _exit_tree() -> void:
     if _thread != null and _thread.is_started():
         _thread.wait_to_finish()
+
+
+## How many streams are ready (the smoke test checks that the synthesis produced them).
+func ready_count() -> int:
+    _mutex.lock()
+    var n: int = _streams.size()
+    _mutex.unlock()
+    return n
 
 
 func play(id: String) -> void:
@@ -128,12 +138,17 @@ func _build() -> void:
     _drop(0.0, 45.0, 12.0, 0.36, 0.6, 3.5)
     _noise(0.0, 0.2, 0.18, 14.0, 0.3)
     _store("burst")
+    # Charm (the id is "level" for historical reasons): a short rising fourth.
+    _begin(0.36)
+    _bell(0.0, 76.0, 0.3, 0.22, 0.4, 12.0)
+    _bell(0.07, 81.0, 0.28, 0.2, 0.4, 12.0)
+    _store("level")
     # Level-up: a bright rising arpeggio that keeps ringing.
     _begin(1.3)
     var up: Array = [69, 72, 76, 81, 84, 88]
     for i in up.size():
         _bell(0.065 * i, float(up[i]), 0.9, 0.26, 0.5, 4.5)
-    _store("level")
+    _store("levelup")
     # Patronus: a slower silver shimmer.
     _begin(1.0)
     var silver: Array = [69, 76, 81, 84, 88]

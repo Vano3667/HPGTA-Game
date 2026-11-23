@@ -14,6 +14,7 @@ const Chapters = preload("res://scripts/data/chapters.gd")
 const Enemies = preload("res://scripts/data/enemies.gd")
 const Spells = preload("res://scripts/data/spells.gd")
 const I18n = preload("res://scripts/core/i18n.gd")
+const I18n2 = preload("res://scripts/core/i18n2.gd")
 const Art = preload("res://scripts/game/art.gd")
 const Style = preload("res://scripts/ui/style.gd")
 
@@ -167,14 +168,22 @@ func _draw() -> void:
     y += 14.0
     _text(Vector2(x0 + 6.0, y), I18n.t("ui_g") % int(world.run_gold), 10, C_GOLD)
     y += 20.0
-    for id in p.weapons.keys():
-        _text(Vector2(x0 + 6.0, y), "%s %d" % [_abbr("sp_" + str(id)), int(p.weapons[id])], 10, C_CYAN)
+    # The build, with how many of its slots are used.
+    var spells: Dictionary = p.weapons
+    var charms: Dictionary = p.passives
+    _text(Vector2(x0 + 6.0, y), "%d/%d" % [spells.size(), Spells.WEAPON_SLOTS], 9, C_DIM)
+    y += 12.0
+    for id in spells.keys():
+        _text(Vector2(x0 + 6.0, y), "%s %d" % [_abbr("sp_" + str(id)), int(spells[id])], 10, C_CYAN)
         y += 13.0
     for id in p.fusions.keys():
         _text(Vector2(x0 + 6.0, y), "+" + _abbr("fu_" + str(id)), 10, Color("ffb04a"))
         y += 13.0
-    for id in p.passives.keys():
-        _text(Vector2(x0 + 6.0, y), "%s %d" % [_abbr("pa_" + str(id)), int(p.passives[id])], 10, C_GOLD)
+    y += 3.0
+    _text(Vector2(x0 + 6.0, y), "%d/%d" % [charms.size(), Spells.PASSIVE_SLOTS], 9, C_DIM)
+    y += 12.0
+    for id in charms.keys():
+        _text(Vector2(x0 + 6.0, y), "%s %d" % [_abbr("pa_" + str(id)), int(charms[id])], 10, C_GOLD)
         y += 13.0
     # One gold pip per active synergy.
     var pips: int = world.syn.size()
@@ -370,6 +379,11 @@ func _gold_label() -> Label:
     return _label(I18n.t("ui_gold") % int(save.data.get("gold", 0)), 15, C_GOLD)
 
 
+# True while a run with a hero is going on (the build limits can be shown).
+func _has_build() -> bool:
+    return world != null and world.in_run and not world.player.is_empty()
+
+
 # An animated layer behind the frame of the open panel: "menu" (calm) or "level" (a burst).
 func _backdrop(kind: String) -> void:
     if overlay == null:
@@ -484,13 +498,20 @@ func show_menu() -> void:
     box.add_child(_label(I18n.t("ui_legal"), 10, C_DIM))
 
 
-## The upgrade choice sits in the middle of the screen, over a burst of light.
+## The upgrade choice sits in the middle of the screen, over a burst of light. Under the heading
+## it says how many spell and talisman slots the build has and how many are used.
 func show_levelup(choices: Array, level: int) -> void:
     var box: VBoxContainer = _panel(I18n.t("ui_level") % level, I18n.t("ui_choose"), false, 0.6, 34)
     _frame.add_theme_stylebox_override("panel", Style.panel_box(0.8))
     _frame.modulate.a = 0.0
     _pop = _frame
     _backdrop("level")
+    if _has_build():
+        var p: Dictionary = world.player
+        var spells: Dictionary = p.weapons
+        box.add_child(_label(Spells.limits(p), 12, C_CYAN))
+        if spells.size() >= Spells.WEAPON_SLOTS:
+            box.add_child(_label(I18n2.t("x_full"), 11, C_DIM))
     for item in choices:
         var c: Dictionary = item
         var col: Color = Style.kind_color(str(c.get("kind", "")))
@@ -504,6 +525,8 @@ func show_levelup(choices: Array, level: int) -> void:
 
 func show_pause() -> void:
     var box: VBoxContainer = _panel(I18n.t("ui_paused"), "", true)
+    if _has_build():
+        box.add_child(_label(Spells.limits(world.player), 12, C_CYAN))
     box.add_child(_primary(_button(I18n.t("ui_resume"), func(): resume_requested.emit())))
     box.add_child(_button(I18n.t("ui_combos"), func(): show_combos(show_pause)))
     box.add_child(_button(I18n.t("ui_settings"), func(): show_settings(show_pause)))
@@ -598,8 +621,9 @@ func _section(list: VBoxContainer, text: String) -> void:
 func show_combos(back: Callable) -> void:
     var box: VBoxContainer = _panel(I18n.t("ui_combos"), I18n.t("ui_combo_sub"), false)
     var build: Dictionary = {"weapons": {}, "passives": {}, "evolved": {}, "fusions": {}}
-    if world != null and world.in_run and not world.player.is_empty():
+    if _has_build():
         build = world.player
+    box.add_child(_label(Spells.limits(build), 12, C_CYAN))
     var list: VBoxContainer = _scroll(box)
     _section(list, I18n.t("ui_sec_fusion"))
     for key in Spells.FUSIONS:
@@ -617,7 +641,7 @@ func show_combos(back: Callable) -> void:
         list.add_child(_label(I18n.t("ui_fuse_req") % [Spells.names(need, " + "), Spells.fusion_min(fid)], 11, C_CYAN))
         list.add_child(_label(I18n.t("fd_" + fid), 12, C_DIM))
         _gap(list)
-    _section(list, I18n.t("ui_sec_evo"))
+    _section(list, I18n2.t("x_sec_evo"))
     for key in Spells.EVOLUTIONS:
         var eid: String = str(key)
         var ev: Dictionary = Spells.EVOLUTIONS[eid]
@@ -690,6 +714,7 @@ func show_help(back: Callable) -> void:
     var box: VBoxContainer = _panel(I18n.t("ui_help"), "", false)
     for i in 5:
         box.add_child(_label(I18n.t("help_%d" % (i + 1)), 13, C_TEXT))
+    box.add_child(_label(I18n2.t("x_help_limits") % [Spells.WEAPON_SLOTS, Spells.PASSIVE_SLOTS, Spells.MAX_LEVEL, Spells.PASSIVE_MAX], 13, C_TEXT))
     if Style.found > 0:
         var credit: String = "Fonts: Yeseva One, Philosopher (SIL Open Font License)"
         if I18n.lang == "ru":

@@ -20,6 +20,8 @@ const LOOKS := {
     "hermione": [Color("6a4426"), 1.3, Color("b02a38")],
     "ron": [Color("c8521e"), 1.05, Color("8a2a30")],
 }
+# Which wind-ups show the attack row of a boss's five-direction sheet ([] = every pattern).
+const BOSS_ATTACK := {"quirrell": [], "basilisk": ["gaze"]}
 
 
 static func shadow(ci: CanvasItem, pos: Vector2, r: float) -> void:
@@ -89,6 +91,31 @@ static func hero(ci: CanvasItem, id: String, pos: Vector2, facing: Vector2, aim:
         ci.draw_line(head + f * 2.0 + s * 1.3, head + f * 0.6 + s * 0.4, Color(SCAR, a), 0.8)
 
 
+# A painted boss. In order of preference: a rotating top-down pose while it dashes or moves
+# (top_<spr>_lunge / top_<spr>_move), a five-direction sheet (boss8_<spr>: row 0 stands, row 1
+# attacks during the wind-up), and the old single picture (boss_<spr>).
+static func _boss(ci: CanvasItem, e: Dictionary, spr: String, feet: Vector2, r: float, tint: Color, t: float) -> bool:
+    var state: String = e.state
+    var face: Vector2 = e.face
+    # e.t is 0 only for the still picture in the bestiary, which should show the standing pose.
+    if e.t > 0.0:
+        if state == "dash":
+            var dd: Vector2 = e.dir
+            if Sprites.rotated(ci, "top_" + spr + "_lunge", e.pos, dd.angle(), r * 5.5, false, tint):
+                return true
+        elif state == "" and e.hold <= 0.0:
+            if Sprites.rotated(ci, "top_" + spr + "_move", e.pos, face.angle(), r * 5.5, fmod(t * 3.0, 2.0) < 1.0, tint):
+                return true
+    var row: int = 0
+    if state == "tell":
+        var pats: Array = BOSS_ATTACK.get(spr, [])
+        if pats.is_empty() or e.pat in pats:
+            row = 1
+    if Sprites.sheet8(ci, "boss8_" + spr, feet, face, row, r * 3.6, tint):
+        return true
+    return Sprites.single(ci, "boss_" + spr, feet, r * 3.6, false, tint)
+
+
 static func enemy(ci: CanvasItem, e: Dictionary, t: float, hc: bool) -> void:
     var ground: Vector2 = e.pos
     var r: float = e.r
@@ -121,7 +148,7 @@ static func enemy(ci: CanvasItem, e: Dictionary, t: float, hc: bool) -> void:
         var lift: float = up - r * 0.35
         var feet: Vector2 = ground + Vector2(0.0, r * 0.6 - lift + absf(wob) * 0.6)
         if e.boss:
-            painted = Sprites.single(ci, "boss_" + spr, feet, r * 3.6, false, tint)
+            painted = _boss(ci, e, spr, feet, r, tint, t)
         else:
             painted = Sprites.single(ci, "mob_" + spr, feet, r * 3.4, face.x < 0.0, tint)
     if not painted:

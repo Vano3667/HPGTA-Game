@@ -108,6 +108,36 @@ static func _actor8(ci: CanvasItem, name: String, feet: Vector2, facing: Vector2
     return true
 
 
+## One cell of a five-direction sheet, for bosses: row 0 stands, row 1 attacks.
+static func sheet8(ci: CanvasItem, name: String, feet: Vector2, facing: Vector2, row: int, height: float, mod: Color) -> bool:
+    var tx: Texture2D = tex(name)
+    if tx == null:
+        return false
+    var cw: float = tx.get_width() / 5.0
+    var rows: int = maxi(1, roundi(tx.get_height() / (cw / 1.5)))
+    var ch: float = tx.get_height() / float(rows)
+    if row >= rows:
+        row = 0
+    var k: int = _sector(name, facing, 8)
+    var col: int = COL8[k]
+    var flip: bool = FLIP8[k]
+    _cell(ci, tx, Rect2(col * cw, row * ch, cw, ch), feet, Vector2(height * cw / ch, height), flip, 0.0, 1.0, mod)
+    return true
+
+
+## A straight top-down sprite that heads right in its file: drawn centred on "center", turned to
+## "angle" and "length" world units long. flip_v mirrors it across its own axis (a slither frame).
+static func rotated(ci: CanvasItem, name: String, center: Vector2, angle: float, length: float, flip_v: bool, mod: Color) -> bool:
+    var tx: Texture2D = tex(name)
+    if tx == null:
+        return false
+    var size := Vector2(length, length * tx.get_height() / float(tx.get_width()))
+    ci.draw_set_transform(center, angle, Vector2(1.0, -1.0 if flip_v else 1.0))
+    ci.draw_texture_rect(tx, Rect2(-size * 0.5, size), false, mod)
+    ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+    return true
+
+
 ## One-frame sprite (enemies and story bosses), feet at the bottom centre.
 static func single(ci: CanvasItem, name: String, feet: Vector2, height: float, flip: bool, mod: Color) -> bool:
     var tx: Texture2D = tex(name)

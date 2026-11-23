@@ -4,79 +4,56 @@
 
 ## Status
 
-**Current stage:** playable Godot 4.3 game, version "v3", on branch `feature/v3-heroes-bosses-meta` (draft PR #2). It has 15 story stages (10 chapters and 5 story-boss arenas), 3 heroes, 28 spells, 9 spell fusions, 3 evolutions, 12 synergies, a galleon shop with permanent upgrades, endless mode, procedural music, Russian and English text, and painted art sliced from `assets/visual-kit` at build time.
+**Current stage:** playable Godot 4.3 game, "v3", on branch `feature/v3-heroes-bosses-meta` (draft PR #2). 15 story stages (10 chapters and 5 story-boss arenas), 3 heroes, 28 spells, 9 fusions, 3 evolutions, 12 synergies, a galleon shop, endless mode, procedural music, Russian and English, and painted art sliced from `assets/visual-kit` at build time. The user installed an earlier v3 APK on a phone and said the game works.
 
 **Repository:** https://github.com/Vano3667/HPGTA-Game (public).
 
-**`main` does not build.** Commits `d0187896` and `3af70f4f` on `main` (ten-chapter expansion written without a Godot binary) fail CI with a parse error at `scripts/game/art.gd:145`; see `build` runs #6 and #7. The v3 branch was created from `main` HEAD `3af70f4f`, replaces those scripts and passes CI. Merging PR #2 repairs `main`. Do not merge it before the user has tried the APK on a phone.
+**`main` does not build.** Its scripts fail to parse (`scripts/game/art.gd:145`); every `build` run on `main` since `d0187896` has failed. The user keeps pushing art to `main`; PR CI tests the branch merged with `main`, so that art is picked up. Merging PR #2 repairs `main`. Merge only after the user approves the look on a phone.
 
-**Verified by CI** (`build` run 44913528986, commit `2d7b47a9`, merged with `main` `3af70f4f`):
+**Last verified by CI:** `build` run 45108826126, commit `6720709d` merged with `main` `9277cb12`. Both jobs passed: sprite build (68 files), import, `[smoke] PASS` with 0 engine errors, debug APK of 55,614,691 bytes (artifact 14788482560). The commit that adds this file version comes after it; its result is in the PR #2 description.
 
-- Sprite build wrote 33 files: 3 hero sheets, 5 story-boss sprites, 10 enemy sprites from the expansion atlas, 15 arena floors.
-- Project import, then `[smoke] PASS` with 0 engine `ERROR:` lines. Data check: 10 chapters + 5 boss arenas, 28 spells, 9 fusions, 12 synergies, 31 enemy types, 338 translation rows with both languages filled.
-- Bot results are in "Balance" below.
-- Debug APK exported: 55,211,298 bytes, artifact `hex-district-debug-apk` (id 14710383390).
+**Not verified by anyone:** how the new art looks in the game. No agent can see images. The obstacle layout, the eight-direction heroes, the boss poses and every cut of a sheet whose figures touch are untested by eye.
 
-The commit that adds this file version also lowers boss health (data only). Its CI result is recorded in the PR #2 description, not here.
-
-**Not verified by anyone:** how anything looks or sounds. Nobody has run v3 on a device or seen a frame of it. Specifically unverified: hero facing directions, which enemy got which painted sprite, floor scale, readability of the new menus on a phone, the music, and all balance beyond the bot numbers.
-
-**Next concrete step:** get the user's on-device feedback on the PR #2 APK, fix what it shows, then merge PR #2. After that, work through "Open work" below.
+**Next concrete step:** the user tries the newest PR #2 APK and reports on: obstacle positions and sizes in Diagon Alley, hero turning, Quirrell and Basilisk poses, and whether boss fights feel too short or too long. Fix from that feedback.
 
 ## Approved Brief
 
-- Working title: **Harry Potter: Hex District**. Non-commercial fan game.
-- Android, portrait-first, top-down survival roguelite.
-- Inspiration: one-thumb movement and automatic attacks as in the Vampire Survivors genre; dense crowd patterns from Crimsonland; compact gritty city-map composition from the user's GTA2 references.
-- **Controls:** one hand, one thumb. Bottom-screen movement zone; wand and spells attack automatically; no manual aim, second thumb or twin-stick input.
-- Use recognizable Harry Potter canon as the user requested. Keep mechanics, compositions, HUD and layouts original. Verify use rights before any public or commercial release.
-- Coding agents work end-to-end without asking the user to make design choices, and keep this file updated.
+- Working title: **Harry Potter: Hex District**. Non-commercial fan game. Android, portrait, top-down survival roguelite.
+- **Controls:** one thumb. Bottom-screen movement zone; all spells fire automatically.
+- Inspiration: Vampire Survivors (auto-attack survival), Crimsonland (dense swarms), GTA2 (gritty overhead city).
+- Use recognizable Harry Potter canon as the user requested; keep mechanics and layouts original; verify rights before any public or commercial release.
+- Agents work end-to-end without asking the user to make design choices and keep this file updated.
 
-Scope changes the user asked for later (all implemented in v3 unless noted under "Open work"):
+Later user requests, all implemented unless listed under "Open Work": pseudo-3D look and sharper rendering; larger hero; particles and weather; Russian and English; 10 levels; 20 more spells with synergies in their own menu; fusions of 2, 3 and 4 spells; galleons and a stat shop; Ron and Hermione; procedural music; endless mode; tutorial and bestiary; five story bosses between levels (Quirrell, Basilisk, Dementor, Nagini, Voldemort); painted sprites and maps; obstacles as separate sprites on an empty floor; more facing directions for the hero.
 
-- Pseudo-3D look, sharper rendering, a larger hero on screen, environment effects and particles.
-- Russian and English, switchable.
-- 10 levels; 20 more spells with effects and synergies; synergies in their own menu item.
-- Fusions made of two, three and four spells.
-- A currency kept between runs and a shop for permanent stats.
-- Ron and Hermione as playable heroes.
-- Procedural music.
-- Endless mode.
-- Tutorial and bestiary.
-- Five story bosses fought between levels: Quirrell, Basilisk, Dementor, Nagini, Voldemort (final).
-- Use the user's painted sprites and maps from `assets/visual-kit`.
+## What the Game Contains
 
-## What the Game Contains (v3)
-
-- **Stages** (`scripts/data/chapters.gd`): diagon (boss warden), hogwarts, *mirror* (Quirrell), forest (aragog), pitch, *dungeon* (Basilisk), ministry (hex), hogsmeade, *lake* (Dementor), vault (idol), crossroads, *classroom* (Nagini), prison (greyback), tower, *bridge* (Voldemort). Italic stages are small duel arenas. A chapter lasts 120 s; one without its own boss ends with a portal.
-- **Heroes** (`Spells.HEROES`): Harry (free), Hermione and Ron (120 galleons each), each with a second starting spell and different stats.
-- **Spells:** 28, data-driven by archetype (bolt, nova, zone, strike, beam, orbit, stag, familiar). 6 spell slots, 4 passive slots, 5 levels.
-- **Fusions** (`Spells.FUSIONS`): 4 of two spells, 3 of three, 2 of four. Offered as a level-up card when every part is at level `5 - number of parts` or higher. They take no slot.
-- **Synergies:** 12 rules of the form "enemy has status X and is hit by element Y".
-- **Meta** (`Spells.META`): ten permanent upgrades bought with galleons, including dodge and a one-time revive.
-- **Endless mode:** chapters loop, duel arenas are skipped, `tier` raises difficulty, best tier is saved.
-- **UI:** hero select, shop, Combos (fusions, evolutions, synergies), bestiary, how-to-play, first-run hints, settings including language, music and "Graphics: painted / simple".
+- **Stages** (`scripts/data/chapters.gd`): diagon (boss warden), hogwarts, *mirror* (Quirrell), forest (aragog), pitch, *dungeon* (Basilisk), ministry (hex), hogsmeade, *lake* (Dementor), vault (idol), crossroads, *classroom* (Nagini), prison (greyback), tower, *bridge* (Voldemort). Italic stages are duel arenas. A chapter lasts 120 s; one without its own boss ends with a portal.
+- **Heroes** (`Spells.HEROES`): Harry (free), Hermione and Ron (120 galleons each).
+- **Spells:** 28, data-driven by archetype. 6 spell slots, 4 passive slots, 5 levels.
+- **Fusions** (`Spells.FUSIONS`): offered as a level-up card when every part is at level `5 - number of parts` or higher; they take no slot.
+- **Synergies:** 12 rules "enemy has status X and is hit by element Y".
+- **Meta** (`Spells.META`): ten permanent upgrades bought with galleons.
+- **Endless mode:** chapters loop, duel arenas are skipped, `tier` raises difficulty.
+- **Obstacles:** `world.obstacles` is a list of rectangles. They block the hero and every enemy, flying ones included. Spells and hostile curses pass through them.
 
 ## Code Map
 
 | Path | Role |
 |---|---|
 | `scripts/main.gd` | Entry point; wires world, HUD, joystick, audio, save |
-| `scripts/game/world.gd` | Simulation step, collisions, statuses and synergies, gold, rendering layers |
+| `scripts/game/world.gd` | Simulation step, collisions, statuses and synergies, gold |
 | `scripts/game/arsenal.gd` | Automatic spells and fusions |
-| `scripts/game/director.gd` | Waves, elites, hazards, boss patterns, duels, endless mode |
-| `scripts/game/arena.gd` | Arena layouts and props |
-| `scripts/game/render.gd` | Pseudo-3D helpers (`Render.lift`), glow textures |
-| `scripts/game/art.gd` | Code-drawn heroes and enemies; draws the painted sprite instead when one exists |
-| `scripts/data/chapters.gd`, `enemies.gd`, `spells.gd` | All tunable data |
-| `scripts/core/i18n.gd` | Every string as an `[English, Russian]` row |
-| `scripts/core/sprites.gd` | Loads runtime art from `res://art/gen/` |
-| `scripts/core/music.gd`, `sfx.gd` | Procedural music and sound effects |
-| `scripts/core/save.gd` | Local save (`user://hex_district.cfg`) |
+| `scripts/game/director.gd` | Waves, elites, hazards, boss state machine (`""`, `tell`, `dash`) |
+| `scripts/game/arena.gd` | Arena layouts; `PAINTED` table places painted obstacles per map |
+| `scripts/game/render.gd` | All drawing passes; painted obstacles are sorted against the hero by `base` |
+| `scripts/game/art.gd` | Heroes, enemies and bosses: painted sprite if present, else code-drawn |
+| `scripts/core/sprites.gd` | Loads `res://art/gen/*`; direction sectors with hysteresis; mirroring |
+| `scripts/data/*.gd` | Stages, enemies and bosses, spells, fusions, heroes, upgrades |
+| `scripts/core/i18n.gd`, `music.gd`, `sfx.gd`, `save.gd` | Text rows `[English, Russian]`, audio, save |
 | `scripts/ui/hud.gd`, `joystick.gd` | HUD strip, all menu panels, one-thumb stick |
 | `tools/build_sprites.gd` | Slices the masters into `art/gen/` (git-ignored) |
-| `tools/asset_probe.gd` | Prints size, alpha and cell layout of each master (workflow `asset-probe`) |
-| `tests/smoke_test.gd` | Headless bot test used by CI |
+| `tests/smoke_test.gd` | Headless bot test used by CI. It never draws a frame |
 
 Run locally, in this order:
 
@@ -86,110 +63,93 @@ godot --headless --path . --import
 godot --headless --path . -s res://tests/smoke_test.gd
 ```
 
-Without the first command the game still runs; everything is then drawn in code.
+The last step of the CI test job prints a "sprite build summary"; read it after every art change.
 
 ## Art Pipeline
 
-- Masters live in `assets/visual-kit/` (it has `.gdignore`, so Godot does not import them). They are never modified. Read `assets/visual-kit/VISUAL_BIBLE.md` first.
-- `tools/build_sprites.gd` writes `hero_<id>.png` (4 columns down/left/right/up, 2 rows idle/step, 144 px cells), `boss_<id>.png` (288 px), `mob_<name>.png` (128 px) and `map_<file>.png`.
-- Anything it cannot slice is skipped and the game draws that actor in code. Telegraphs and status markers are always code-drawn.
+Masters live in `assets/visual-kit/` (it has `.gdignore`). They are never modified. File formats the tool understands:
 
-Two masters were skipped in the verified run because they have no transparent background:
+| Master | Runtime file | Notes |
+|---|---|---|
+| `sprites/<hero>-8dir-idle.png`, `-walk-a`, `-walk-b` | `hero8_<id>.png` | One row of five figures: front, front-right, right, back-right, back. The game mirrors the left side. Idle is required; with idle only, the walk is a bob and lean in code |
+| `sprites/boss-NN-<name>-8dir-idle.png` plus one attack row | `boss8_<id>.png` | Same layout. Attack row: Quirrell `-cast` (every wind-up), Basilisk `-gaze` (the gaze wind-up) |
+| `sprites/boss-02-cockatrice-basilisk-top-move.png`, `-top-lunge.png` | `top_basilisk_*.png` | One figure, true top-down, heading right; rotated in code while moving or dashing |
+| `sprites/mobs/<name>.png` (or `<name> v2.png`) | `mob_<name>.png` | One enemy per file; overrides the atlas cell of the same name |
+| `props/<map>/<type>-<size>-<name>.png` | `prop_<map>_<file>.png` | type `wall`, `low`, `pit`, `deco`; size `s`, `m`, `l`, `xl` (24, 52, 100, 180 world units wide) |
+| `floors/<map>.png` or `locations/<map>.png` | `map_<map>.png` | Arena floor at scale 0.6; `floors/` wins |
+| old atlases and single boss pictures | `hero_<id>.png`, `boss_<id>.png` | Fallbacks |
 
-| Master | Effect |
-|---|---|
-| `sprites/enemies-core-pseudo3d-atlas.png` (every pixel is semi-transparent) | cauldron, sprite, mimic, caster, armor, book, portrait, spider, wraith and plant are code-drawn |
-| `sprites/hero-wizard-forward-wand-standing.png` (corrected back-facing pose) | Harry's back-facing frames still come from the atlas, where the wand arm points backward |
+Results of the last verified sprite build:
 
-If the user re-uploads either file under the same name with a truly transparent background, the next build picks it up with no code change.
+- All 10 core enemies come from `sprites/mobs/` (the caster from `caster v2.png`). All 9 Diagon Alley props and the floor were written.
+- `hero8_hermione`: three clean rows. `hero8_ron`: clean idle; in both walk sheets the figures touch.
+- `boss8_quirrell`: figures touch in both sheets. `boss8_basilisk`: clean idle; figures touch in the gaze sheet.
+- **Harry has no five-direction sheet**: `hero-wizard-8dir-idle.png` is not in the repository. He still uses the old four-direction atlas, where the back-facing pose has the wand arm pointing backward. The user's image generator refused Harry's walk sheets for likeness to third-party content.
+- `ron-pseudo3d-8pose-atlas.png` and `hero-wizard-forward-wand-standing.png` were deleted by the user; the tool skips them.
 
-Guesses that need a human eye:
+When figures touch, the tool cuts at the emptiest column near each boundary and prints a WARNING with the number of pixels crossed. Such frames can show a clipped wand or a sliver of the neighbour. The clean fix is a regenerated sheet with wider gaps.
 
-- Hero column order per sheet (`HEROES[...].cols` in `build_sprites.gd`): Harry `[0,3,1,2]`, Hermione and Ron `[2,3,1,0]`.
-- Enemy names are assigned to atlas cells in reading order from `VISUAL_BIBLE.md` (`MOBS` in `build_sprites.gd`).
-- Story bosses use the single-pose masters; the five 8-pose boss atlases are unused.
-- Location paintings are used as the arena floor at scale 0.6 with no collision; walls painted on them do not block anyone.
+Things only a human eye can check:
+
+- Order of the five figures in every sheet (assumed to follow the prompt).
+- The `PAINTED` layout in `arena.gd` and the solid part of each prop (`hit`: 78% of a building's height, the base of a lamp post, the inner part of a pit).
+- Old four-direction hero column order (`HEROES[...].cols` in `build_sprites.gd`).
+- Mirrored sprites are now drawn with a flip transform around the feet. Before that, mirrored enemies may have been drawn one sprite-width to the side.
 
 ## Balance
 
-Bot log of run 44913528986 (invulnerable bot, picks upgrade cards round-robin, runs in circles):
+The smoke bot is invulnerable, walks in circles and picks cards round-robin, so its build is luck.
 
-- Mortal bot: died at 74 s in stage 1, level 3, 46 kills.
-- Full run: victory, 14 stage clears, 2429 s simulated, level 66, 592 galleons. The bot's final build was wand, expelliarmus, depulso, arresto, aguamenti, riddikulus with no fusions, which is a weak damage build.
-- The test force-kills a boss after 120 s. That happened to 9 of 10 bosses.
-- Endless: 3 stages in 462 s. Upgrade pool is exhausted after 49 picks.
+| Run | Boss health | Bot build | Result |
+|---|---|---|---|
+| 44913528986 | old (750 to 9800) | wand, expelliarmus, depulso, arresto, aguamenti, riddikulus | 9 of 10 bosses still alive after 120 s |
+| 45108219487 | current (480 to 5200) | wand, expelliarmus, stupefy, bombarda, reducto, solem | every boss dead in 10 to 33 s |
 
-| Boss | Stage | Old HP | Bot damage in 120 s | New HP |
-|---|---|---|---|---|
-| warden | 1 | 750 | 296 | 480 |
-| quirrell | 3 | 1700 | 1673 | 1500 |
-| aragog | 4 | 2400 | killed in 98 s | 2400 |
-| basilisk | 6 | 3400 | 3083 | 2900 |
-| hex | 7 | 4000 | 2732 | 3000 |
-| dementor | 9 | 5000 | 2792 | 3300 |
-| idol | 10 | 5600 | 1873 | 2800 |
-| nagini | 12 | 6600 | 2476 | 3600 |
-| greyback | 13 | 7200 | 1416 | 2600 |
-| voldemort | 15 | 9800 | 3610 | 5200 |
-
-Reasoning: bot damage per second stops growing at stage 4 to 6 (about 20 to 30) because a build is complete after 49 picks, while boss health kept doubling. The new values assume a human with a sensible build deals roughly twice the bot's damage and aim at fights of one to one and a half minutes. That factor of two is an assumption, not a measurement. Charging bosses (greyback, nagini) take much less damage because they leave spell range.
+Build quality changes boss damage about sixfold, so boss health cannot be tuned from bot logs alone. Current values are the lowered ones from the first run. They are probably too low for a good build. Decision: leave them until the user says how the fights feel. A build is complete after 49 picks; later level-ups only heal.
 
 ## Open Work
 
-1. On-device check of the PR #2 APK by the user; fix findings; merge PR #2.
-2. Art: transparent re-exports of the two skipped masters (user), then check hero directions and enemy name mapping against what the user sees.
-3. Use the boss 8-pose atlases (facing and attack frames).
-4. Collision for painted maps (per-map obstacle rectangles in `chapters.gd`).
-5. Late-game growth: after 49 picks every level-up offers only a heal. Add a repeatable card (for example +4% damage) so long runs and endless mode keep scaling.
-6. Smarter test bot (prefers damage and fusions) so the balance table means more.
-7. Release signing (below) is still not configured.
+1. User feedback on the newest APK, then fixes; merge PR #2 when the user approves.
+2. Harry's five-direction sheet (needs a less recognizable design or another generator). Regenerate the sheets whose figures touch if they look clipped.
+3. Obstacles for the other 14 maps: the user generates an empty floor and props per map, then add a `PAINTED` entry.
+4. Flying enemies should cross pits; walls should stop spells. Both need per-obstacle flags in `world.push_out` and the shot update.
+5. Five-direction sheets for Dementor, Nagini, Voldemort; top-down poses for Nagini.
+6. Boss health once there is human feedback; a repeatable late-game card; a smarter test bot.
+7. Release signing (below) is not configured.
 
 ## Art and References
 
-- `assets/visual-kit/` — the user's high-resolution pseudo-3D masters: 10 location paintings, 5 boss arenas, hero, Hermione and Ron atlases, two enemy atlases, five story bosses (single pose and 8-pose atlas each). This is the current visual direction.
-- `refs/source_examples/` — eight user-provided screenshots, unchanged: three GTA2 city scenes and five Crimsonland scenes.
-- `refs/01_diagon_alley.svg` … `refs/05_ministry_battle.svg`, `refs/character_harry_topdown.svg`, `refs/enemies_topdown.svg` — earlier hand-authored SVG concept boards.
-- `refs/archive_previous/` — obsolete diagrams, kept for history.
-- `refs/.gdignore` keeps Godot from importing the folder.
+- `assets/visual-kit/` — the user's painted masters and `VISUAL_BIBLE.md`. `locations — backup/` holds the user's copy of the old location paintings.
+- `refs/` — earlier SVG concept boards, the user's GTA2 and Crimsonland screenshots (`source_examples/`), and `archive_previous/`. `refs/.gdignore` keeps Godot from importing them.
 
 ## Android Release Signing — Required for Future Updates
 
-- `.github/workflows/build.yml` exports a debug APK with the CI debug keystore. It is for testing and is not a stable release identity.
-- A distributable update must keep the same Android `applicationId` (`com.vano3667.hexdistrict`) and be signed with the same persistent release certificate as the installed version; increase `versionCode` on every release.
-- Do not generate a replacement release key casually. Losing the keystore or changing the signing identity normally prevents in-place updates; users may need to uninstall and lose local save data.
-- Read `ANDROID_SIGNING.md` for the four repository Actions secrets: `HOMEMENU_KEYSTORE_BASE64`, `HOMEMENU_KEYSTORE_PASSWORD`, `HOMEMENU_KEY_ALIAS`, `HOMEMENU_KEY_PASSWORD`.
-- Never put secret values in chat, source, docs, `export_presets.cfg` or repository files. The user sets them under Settings → Secrets and variables → Actions.
-- A release-signing workflow is **not configured or tested**. Keep the debug workflow, add a separate release path, verify the signature and a same-key upgrade, then record the result here.
+- `.github/workflows/build.yml` exports a debug APK with the CI debug keystore. It is not a stable release identity.
+- A distributable update must keep the `applicationId` (`com.vano3667.hexdistrict`) and be signed with the same persistent release certificate; increase `versionCode` on every release.
+- Losing the keystore or changing the signing identity normally prevents in-place updates and can cost users their save data.
+- `ANDROID_SIGNING.md` lists the four Actions secrets: `HOMEMENU_KEYSTORE_BASE64`, `HOMEMENU_KEYSTORE_PASSWORD`, `HOMEMENU_KEY_ALIAS`, `HOMEMENU_KEY_PASSWORD`. Never put secret values in chat, source or docs.
+- A release-signing workflow is **not configured or tested**.
 
 ## Session Log
 
 ### 2026-11-20/21 — v1 prototype (on `main`)
 
-- Built the first playable game: 5 chapters, 8 spells, 6 passives, 3 evolutions, code-drawn art, procedural sound, local save, smoke test, CI with debug APK. Commits `c7bdbf50`, `0e304a29`, `ebf8eefb`, `be92587d`, `c4151b48`, `c295f866`.
-- CI: the first attempt of runs #1 and #2 failed before any step and passed on re-run; runs #3 and #4 passed. The user installed the APK and confirmed the game works.
+- 5 chapters, 8 spells, code-drawn art, smoke test, CI with debug APK. Commits `c7bdbf50` to `c295f866`. The user confirmed the APK works.
 
-### 2026-11-21 — signing documentation (another agent)
+### 2026-11-21 — other agents on `main`
 
-- Added `ANDROID_SIGNING.md`, updated README and the agent prompt, added keystore patterns to `.gitignore`. No secrets stored; nothing about signing was tested.
+- Signing documentation (`ANDROID_SIGNING.md`). Then a ten-chapter rewrite made without a Godot binary plus the first `assets/visual-kit` masters; those scripts do not parse and `main` has been broken since.
 
-### 2026-11-21 — ten-chapter expansion and visual kit (another agent, on `main`)
+### 2026-11-21 — v2 (PR #1, closed) and v3 (PR #2)
 
-- Added `assets/visual-kit` masters and `VISUAL_BIBLE.md`, and rewrote several scripts for ten chapters without a Godot binary. Those script changes do not parse (`art.gd:145`); `build` runs #6 and #7 failed. `main` has been broken since.
+- v2: pseudo-3D props, glow, weather, RU/EN, 10 chapters, 28 spells, synergies. CI run 44861199414 passed. Carried into v3.
+- v3: commits `0f18274e`, `ec7affd2`, `d16aa67d`, `dd102f10` (duplicate push, superseded), `2d7b47a9`. Painted art pipeline, heroes, story bosses, fusions, meta shop, endless mode, music, tutorial, bestiary.
+- `0051b313`: boss health lowered from the first bot log; HANDOFF and README rewritten.
 
-### 2026-11-21 — v2 (branch `feature/v2-pseudo3d-ru-10-levels`, PR #1, closed)
+### 2026-11-23 — obstacles, eight directions, boss poses
 
-- Pseudo-3D props with roof parallax, glow layer, weather and particles, native-resolution rendering, larger hero, RU/EN, 10 chapters, 28 spells, 12 synergies, Synergies menu.
-- CI run 44861199414 passed (smoke test and APK). The branch conflicted with the new `main`, so its content was carried into v3 and PR #1 was closed.
-
-### 2026-11-21 — v3 (branch `feature/v3-heroes-bosses-meta`, draft PR #2)
-
-- Commits `0f18274e` (asset probe), `ec7affd2` (data), `d16aa67d` (game), `dd102f10` and `2d7b47a9` (UI, sprite tool, test, workflow). The last two touch the same five files; `dd102f10` is a duplicate push and is fully superseded by `2d7b47a9`.
-- Everything listed under "What the Game Contains" and "Art Pipeline". Also fixed the second strip of the `sweep` hazard, and spells now aim at the boss 60% of the time when it is in range.
-- CI: `asset-probe` run 44910649648 passed; `build` runs 44913487244 (`dd102f10`) and 44913528986 (`2d7b47a9`) passed both jobs.
-
-### 2026-11-21 — balance and documentation
-
-- Read the sprite and smoke logs of run 44913528986; recorded the results above.
-- Lowered boss health in `scripts/data/enemies.gd` as in the "Balance" table. No other code changed.
-- Rewrote this file and README for v3. Corrected the earlier statement that the repository is private.
-- Decision: did not try to cut the corrected back-facing pose or the core enemy atlas out of their non-transparent backgrounds. Nobody on the agent side can look at the result, and a bad cut-out of the main hero is worse than the current pose. Asked the user for transparent exports instead.
+- The user pushed to `main`: an empty Diagon Alley floor, 9 props, 10 single-enemy files, five-direction sheets for Hermione, Ron, Quirrell and the Basilisk, two top-down Basilisk poses, a transparent core enemy atlas.
+- `a56c5093`: `tools/build_sprites.gd` learned the formats in the table above. CI run 45108219487 passed.
+- `6720709d`: `arena.gd` places painted obstacles in Diagon Alley with collision; `render.gd` draws them in front of or behind the hero; `sprites.gd` got eight facing sectors with hysteresis, a four-phase walk cycle and in-place mirroring; the workflow prints a sprite summary. CI run 45108826126 passed.
+- This commit: `art.gd` and `sprites.gd` show boss sheets and rotating top-down poses; `build_sprites.gd` cuts touching figures at the emptiest column instead of into equal parts.
+- Decisions: boss health left alone (see "Balance"). The corrected back pose was not cut out of an opaque background by guesswork; the user was asked for clean art instead. Pits currently block flying enemies too.

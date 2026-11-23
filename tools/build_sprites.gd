@@ -258,8 +258,9 @@ func _grid(img: Image, rows: int, cols: int, file: String) -> Array:
     return out
 
 
-# Finds n figures standing in one row. Extra fragments are merged into their nearest neighbour;
-# figures that touch are split evenly (and reported, because that cut can clip a wand).
+# Finds n figures standing in one row. Extra fragments are merged into their nearest neighbour.
+# Figures that touch are cut at the emptiest column near each expected boundary; that is reported,
+# because such a cut can still clip a wand or leave a sliver of the neighbour.
 func _strip(img: Image, n: int, file: String) -> Array:
     var w: int = img.get_width()
     var h: int = img.get_height()
@@ -271,7 +272,8 @@ func _strip(img: Image, n: int, file: String) -> Array:
     var y0: int = bands[0][0]
     var y1: int = bands[bands.size() - 1][1]
     var band := Rect2i(0, y0, w, y1 - y0 + 1)
-    var cells: Array = _runs(_cols(data, w, band), band.size.y)
+    var cc: PackedInt32Array = _cols(data, w, band)
+    var cells: Array = _runs(cc, band.size.y)
     var found: int = cells.size()
     if found == 0:
         print("[sprites] skip %s: no figures found" % file)
@@ -290,10 +292,22 @@ func _strip(img: Image, n: int, file: String) -> Array:
         var x0: int = cells[0][0]
         var x1: int = cells[cells.size() - 1][1]
         var step: float = (x1 - x0 + 1) / float(n)
+        var span: int = int(step * 0.3)
+        var cuts: Array = [x0]
+        var worst: int = 0
+        for i in range(1, n):
+            var mid: int = x0 + int(step * i)
+            var at: int = mid
+            for x in range(maxi(x0 + 1, mid - span), mini(x1, mid + span)):
+                if cc[x] < cc[at] or (cc[x] == cc[at] and absi(x - mid) < absi(at - mid)):
+                    at = x
+            cuts.append(at)
+            worst = maxi(worst, cc[at])
+        cuts.append(x1 + 1)
         cells = []
         for i in n:
-            cells.append([x0 + int(step * i), x0 + int(step * (i + 1)) - 1])
-        print("[sprites] %s: WARNING figures touch (%d separate shapes), split into %d equal parts" % [file, found, n])
+            cells.append([int(cuts[i]), int(cuts[i + 1]) - 1])
+        print("[sprites] %s: WARNING figures touch (%d separate shapes); cut at the emptiest columns, up to %d px of art crossed" % [file, found, worst])
     elif found != n:
         print("[sprites] %s: %d separate shapes merged into %d figures" % [file, found, n])
     var out: Array = []

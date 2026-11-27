@@ -6,10 +6,15 @@ const HudScript = preload("res://scripts/ui/hud.gd")
 const StickScript = preload("res://scripts/ui/joystick.gd")
 const SaveScript = preload("res://scripts/core/save.gd")
 const SfxScript = preload("res://scripts/core/sfx.gd")
+const MusicScript = preload("res://scripts/core/music.gd")
+const Sprites = preload("res://scripts/core/sprites.gd")
+const I18n = preload("res://scripts/core/i18n.gd")
 const Chapters = preload("res://scripts/data/chapters.gd")
+const Style = preload("res://scripts/ui/style.gd")
 
 var save
 var sfx
+var music
 var world
 var hud
 var stick
@@ -19,10 +24,19 @@ func _ready() -> void:
     get_tree().quit_on_go_back = false
     save = SaveScript.new()
     save.load_data()
+    # First launch follows the device language; afterwards the saved choice wins.
+    if str(save.data.get("lang", "")) == "":
+        save.data["lang"] = I18n.system_lang()
+    I18n.lang = str(save.data["lang"])
+    Style.load_fonts()
     sfx = SfxScript.new()
     add_child(sfx)
+    music = MusicScript.new()
+    add_child(music)
     world = WorldScript.new()
     add_child(world)
+    # Floating texts in the arena use the interface font too.
+    world.font = Style.bold
     var layer := CanvasLayer.new()
     add_child(layer)
     stick = StickScript.new()
@@ -33,6 +47,7 @@ func _ready() -> void:
 
     world.level_up.connect(_on_level_up)
     world.chapter_cleared.connect(_on_chapter_cleared)
+    world.stage_changed.connect(_on_stage)
     world.run_ended.connect(_on_run_ended)
     world.boss_arrived.connect(_on_boss)
     world.player_hurt.connect(_on_hurt)
@@ -47,6 +62,7 @@ func _ready() -> void:
 
     _apply_settings()
     hud.show_menu()
+    music.play("menu")
 
 
 func _process(_delta: float) -> void:
@@ -73,24 +89,43 @@ func _notification(what: int) -> void:
 
 func _apply_settings() -> void:
     var d: Dictionary = save.data
+    I18n.lang = str(d.get("lang", "en"))
+    Sprites.enabled = bool(d.get("sprites", true))
     stick.right_handed = bool(d.get("right_handed", true))
     stick.stick_size = float(d.get("stick_size", 56.0))
     stick.stick_opacity = float(d.get("stick_opacity", 0.5))
     stick.sensitivity = float(d.get("sensitivity", 1.0))
     stick.queue_redraw()
     sfx.enabled = bool(d.get("sound", true))
+    music.enabled = bool(d.get("music", true))
+
+
+# Move the galleons and bestiary entries earned so far into the save.
+func _bank() -> void:
+    var d: Dictionary = save.data
+    d["gold"] = int(d.get("gold", 0)) + int(world.take_gold())
+    var seen: Dictionary = d.get("seen", {})
+    for k in world.seen.keys():
+        seen[k] = true
+    d["seen"] = seen
 
 
 func _announce() -> void:
-    hud.show_banner(str(world.chapter.name), str(world.chapter.subtitle))
+    var id: String = str(world.chapter.id)
+    hud.show_banner(I18n.t("ch_" + id), I18n.t("cs_" + id))
+    music.play("battle")
 
 
-func _on_start(resume: bool) -> void:
+# kind: "resume" (story checkpoint), "story" (new story run) or "endless".
+func _on_start(kind: String) -> void:
     hud.close_panel()
     stick.reset()
     var cp: Dictionary = save.data.get("checkpoint", {})
-    if resume and not cp.is_empty():
+    if kind == "resume" and not cp.is_empty():
         world.start_run(save.data, cp)
+    elif kind == "endless":
+        world.start_run(save.data, {}, "endless")
+        save.data["runs"] = int(save.data["runs"]) + 1
     else:
         save.data["checkpoint"] = {}
         world.start_run(save.data)
@@ -108,10 +143,29 @@ func _on_level_up(choices: Array) -> void:
 func _on_upgrade(choice: Dictionary) -> void:
     hud.close_panel()
     world.apply_upgrade(choice)
+    if world.active:
+        _level_fx()
+
+
+# When play resumes after a level-up: two shockwave rings, a shower of sparks and a column of
+# light rising from the hero. Purely visual.
+func _level_fx() -> void:
+    var pp: Vector2 = world.player.pos
+    var gold := Color("f0d278")
+    var rng: RandomNumberGenerator = world.rng
+    world.add_fx({"kind": "ring", "pos": pp, "r0": 6.0, "r1": 120.0, "col": gold, "life": 0.6, "width": 3.0})
+    world.add_fx({"kind": "ring", "pos": pp, "r0": 4.0, "r1": 70.0, "col": Color("67dcf4"), "life": 0.45, "width": 2.0})
+    world.burst(pp, gold, 28, 170.0)
+    for i in 16:
+        var at: Vector2 = pp + Vector2(rng.randf_range(-11.0, 11.0), rng.randf_range(-4.0, 6.0))
+        var col: Color = gold if i % 3 > 0 else Color("fff6d0")
+        world.spawn_part(at, Vector2(0.0, -rng.randf_range(70.0, 190.0)), rng.randf_range(0.45, 0.9), col, 1.6, true, 1)
 
 
 func _on_chapter_cleared(index: int) -> void:
     stick.reset()
+    _bank()
+    save.data["tutorial"] = true
     save.data["best_chapter"] = maxi(int(save.data["best_chapter"]), index + 1)
     save.data["checkpoint"] = world.checkpoint(index + 1)
     save.save_data()
@@ -124,18 +178,32 @@ func _on_continue() -> void:
     _announce()
 
 
+# Endless mode moved on to the next arena by itself.
+func _on_stage(tier: int) -> void:
+    _bank()
+    save.data["best_endless"] = maxi(int(save.data["best_endless"]), tier)
+    save.save_data()
+    _announce()
+
+
 func _on_run_ended(victory: bool) -> void:
     stick.reset()
+    _bank()
     var d: Dictionary = save.data
+    d["tutorial"] = true
     d["best_kills"] = maxi(int(d["best_kills"]), int(world.kills))
-    d["checkpoint"] = {}
-    if victory:
-        d["wins"] = int(d["wins"]) + 1
-        d["best_chapter"] = Chapters.LIST.size()
+    if str(world.mode) == "endless":
+        d["best_endless"] = maxi(int(d["best_endless"]), int(world.tier))
     else:
-        d["best_chapter"] = maxi(int(d["best_chapter"]), int(world.chapter_index))
+        d["checkpoint"] = {}
+        if victory:
+            d["wins"] = int(d["wins"]) + 1
+            d["best_chapter"] = Chapters.LIST.size()
+        else:
+            d["best_chapter"] = maxi(int(d["best_chapter"]), int(world.chapter_index))
     save.save_data()
     hud.show_summary(victory)
+    music.play("menu")
 
 
 func _on_pause() -> void:
@@ -152,14 +220,19 @@ func _on_resume() -> void:
 
 
 func _on_menu() -> void:
+    if world.in_run:
+        _bank()
+        save.save_data()
     world.active = false
     world.in_run = false
     hud.show_menu()
+    music.play("menu")
 
 
-func _on_boss(boss_name: String) -> void:
-    hud.show_banner(boss_name, "Watch the amber telegraphs")
+func _on_boss(boss_key: String) -> void:
+    hud.show_banner(I18n.t("bo_" + boss_key), I18n.t("ui_boss_sub"))
     sfx.play("warn")
+    music.play("boss")
 
 
 func _on_hurt(_amount: float) -> void:

@@ -1,62 +1,77 @@
 # Harry Potter: Hex District
 
-Private, non-commercial fan-game project: a portrait, one-thumb Android survival roguelite set in the recognizable Harry Potter universe. Controls and game information are in English.
+Non-commercial fan-game project: a portrait, one-thumb Android survival roguelite set in the recognizable Harry Potter universe. The game text is available in Russian and English.
 
-The repository now contains a **playable Godot 4.3 prototype** next to the original design and visual reference package.
+The repository contains a **playable Godot 4.3 game** next to the design documents, the painted master art and the earlier visual references.
 
-## Playable Prototype
+## The Game
 
-- Engine: Godot 4.3 (GDScript, GL Compatibility renderer), portrait 480x854 low-resolution viewport scaled up for a crunchy look.
-- One thumb only: touch the lower 60% of the screen and drag to move; every spell targets and fires by itself. Keyboard WASD/arrows work on desktop as a test aid.
-- Ten chapters in order, each with its own layout, enemy mix, hazard and boss. The campaign expands past the original five with Hogsmeade, Serpent Vault, Midnight Crossroads, Storm Prison and Astronomy Tower.
-- Eight automatic spells, six passives, three evolutions, XP pickups with a magnet radius, three-card level-up screen, pause, settings, local save with a per-chapter checkpoint.
-- Gameplay silhouettes are drawn in code for fast mobile swarms. High-resolution pseudo-3D hero, enemy and location masters are provided in [`assets/visual-kit/`](assets/visual-kit/) for production animation and export work.
+- Engine: Godot 4.3 (GDScript, GL Compatibility renderer), portrait, rendered at the device's native resolution.
+- One thumb only: touch the lower part of the screen and drag to move; every spell targets and fires by itself. Keyboard WASD/arrows work on desktop as a test aid.
+- Story mode with 15 stages: ten chapters and five story-boss stages (Quirrell, the Basilisk, a Dementor, Nagini, Voldemort).
+- Open world: a stage has no border. The ground repeats without end and obstacles are generated around the hero as he walks.
+- Endless mode: chapters loop and get harder; the best result is saved.
+- Three heroes: Harry, Hermione and Ron, each with a different starting spell and stats.
+- 28 automatic spells and 6 talismans. A build holds up to 8 spells (to level 7) and 6 talismans (to level 5); after that every level offers repeatable bonus cards.
+- 9 fusions made of two to four spells, 3 evolutions and 12 elemental synergies. The Combos menu lists all of them and shows what the current build has.
+- Galleons are kept between runs and buy permanent upgrades and heroes.
+- Weather, particles and glow. Painted heroes, bosses, enemies, floors and obstacles are sliced from [`assets/visual-kit/`](assets/visual-kit/) when the game is built. Anything without a usable painted sprite is drawn in code.
+- Procedural music and sound effects; no audio files.
+- Bestiary, how-to-play screen, first-run hints, pause, settings, local save with a per-stage checkpoint.
 
 ### Run it
 
 1. Install [Godot 4.3](https://godotengine.org/download/archive/4.3-stable/) (standard build).
-2. Open `project.godot` in the editor and press **F5**, or run `godot --path .` from the repository root.
+2. Optional, for painted art: `godot --headless --path . -s res://tools/build_sprites.gd`
+3. Open `project.godot` in the editor and press **F5**, or run `godot --path .` from the repository root.
+
+The interface fonts (Yeseva One and Philosopher, SIL Open Font License) are downloaded by the CI workflow and are not stored in git. A local checkout falls back to the engine font unless you fetch them the same way (see `.github/workflows/build.yml`).
 
 ### Android APK
 
-The `build` GitHub Actions workflow (`.github/workflows/build.yml`) runs on every push to `main` that touches code:
+The `build` GitHub Actions workflow (`.github/workflows/build.yml`) runs on pull requests and on pushes to `main` that touch code:
 
-1. imports the project and runs the headless smoke test (`tests/smoke_test.gd`, a bot plays all ten chapters);
+1. builds the runtime art from `assets/visual-kit`, downloads the fonts, imports the project and runs the headless smoke test (`tests/smoke_test.gd`: a bot plays the story and endless mode, walks across the open world, and every menu is opened in both languages);
 2. exports a debug APK and uploads it as the `hex-district-debug-apk` artifact of the run (Actions tab -> latest `build` run -> Artifacts).
 
-The APK is currently a debug build signed with the CI debug keystore. It is for testing only and is not the release signing identity for users' future app updates. Run the smoke test locally with:
+The APK is a debug build signed with the CI debug keystore. It is for testing only and is not the release signing identity for future app updates. Run the smoke test locally with:
 
 ```
+godot --headless --path . -s res://tools/build_sprites.gd
+godot --headless --path . --import
 godot --headless --path . -s res://tests/smoke_test.gd
 ```
 
-For release signing, set up the persistent signing key as GitHub Actions secrets and use the same package name, keystore and key for every update. See [ANDROID_SIGNING.md](ANDROID_SIGNING.md) for the required secret names, safe handling and update rules. Do not commit the keystore or passwords.
+For release signing, set up the persistent signing key as GitHub Actions secrets and use the same package name, keystore and key for every update. See [ANDROID_SIGNING.md](ANDROID_SIGNING.md). Do not commit the keystore or passwords.
 
 ### Code map
 
 | Path | Role |
 |---|---|
 | `scripts/main.gd` | Entry point; wires world, HUD, joystick, audio and save |
-| `scripts/game/world.gd` | Simulation step, collisions, arena layouts, world rendering |
-| `scripts/game/arsenal.gd` | Automatic spells |
-| `scripts/game/director.gd` | Waves, elites, chapter hazards, boss patterns |
-| `scripts/game/art.gd` | Pseudo-3D code-drawn hero and enemy gameplay silhouettes |
-| `assets/visual-kit/` | High-resolution pseudo-3D master art plus production handoff |
-| `scripts/data/*.gd` | Chapters, enemies/bosses, spells/passives/evolutions |
-| `scripts/ui/*.gd` | One-thumb joystick, HUD strip and menu panels |
-| `scripts/core/*.gd` | Local save and procedural sound effects |
+| `scripts/game/world.gd` | Simulation step, collisions, statuses and synergies, camera |
+| `scripts/game/arsenal.gd` | Automatic spells and fusions |
+| `scripts/game/director.gd` | Waves, elites, hazards, boss patterns, endless mode |
+| `scripts/game/arena.gd` | Open-world generator: obstacles are built chunk by chunk around the hero |
+| `scripts/game/render.gd`, `art.gd` | Drawing passes, floor tiling, code-drawn and painted actors |
+| `scripts/data/*.gd` | Stages, enemies and bosses, spells, fusions, heroes, upgrades, build limits |
+| `scripts/core/*.gd` | Translations, sprite loader, save, procedural music and sound |
+| `scripts/ui/*.gd` | One-thumb joystick, HUD strip, menu panels, fonts and styles |
+| `tools/build_sprites.gd` | Slices the master art into runtime sheets (`art/gen/`, not stored in git) |
 | `tests/smoke_test.gd` | Headless bot test used by CI |
 
 See [HANDOFF.md](HANDOFF.md) for the verified status, known limits and next steps.
 
 ## Design and Agent Brief
 
-- [CONCEPT.md](CONCEPT.md) — game concept, world, spells, survival loop and ten campaign chapters.
-- [PROMPT_FOR_AGENT.md](PROMPT_FOR_AGENT.md) — autonomous implementation prompt; the coding agent is told not to ask the user to make project decisions.
+- [CONCEPT.md](CONCEPT.md) — game concept, world, spells and survival loop.
+- [PROMPT_FOR_AGENT.md](PROMPT_FOR_AGENT.md) — autonomous implementation prompt for coding agents.
 - [HANDOFF.md](HANDOFF.md) — persistent status, verified work and next implementation action.
-- [ANDROID_SIGNING.md](ANDROID_SIGNING.md) — permanent Android release-signing key, GitHub Actions secrets and in-place update requirements.
+- [ART_PROMPTS.md](ART_PROMPTS.md) — image prompts for floors, obstacles and characters, and the file names the game expects (in Russian).
+- [ANDROID_SIGNING.md](ANDROID_SIGNING.md) — Android release-signing key, GitHub Actions secrets and in-place update requirements.
+- [assets/visual-kit/VISUAL_BIBLE.md](assets/visual-kit/VISUAL_BIBLE.md) — the painted master art and how it is meant to be used.
 
-## New Overhead Level Concepts
+## Earlier Overhead Level Concepts
 
 | Chapter | Concept board |
 |---|---|
@@ -66,16 +81,14 @@ See [HANDOFF.md](HANDOFF.md) for the verified status, known limits and next step
 | Quidditch Pitch | ![Quidditch Pitch overhead concept](refs/04_quidditch_pitch.svg) |
 | Ministry of Magic | ![Ministry battle overhead concept](refs/05_ministry_battle.svg) |
 
-## Character and Enemy Concepts
+- [Harry Potter — top-down player sprite sheet](refs/character_harry_topdown.svg)
+- [Enemy roster — top-down sheet](refs/enemies_topdown.svg)
 
-- [Harry Potter — top-down player sprite sheet](refs/character_harry_topdown.svg): four cardinal overhead views, gameplay-scale sprite and identifying silhouette details.
-- [Enemy Roster — top-down sheet](refs/enemies_topdown.svg): Aragog/giant spider, Dementor, Death Eater, animated armor, Inferi, Cornish pixie, werewolf and basilisk.
-
-These are custom vector design boards produced for this concept. They are not AI-generated raster screenshots or finished production sprites. The scene boards are concept layouts/visual direction, not complete playable maps.
+These are hand-authored vector concept boards. The painted masters in `assets/visual-kit/` replace them as the current visual direction.
 
 ## User-Supplied Style References (preserved unchanged)
 
-The user-provided source screenshots are kept in [`refs/source_examples/`](refs/source_examples/) as visual references. They anchor the dense GTA 2-like overhead city composition and the Crimsonland-like top-down survival combat, creature swarms, spell/projectile trails, HUD placement and dark textured surfaces. Use them to guide tone and readability; do not copy their exact artwork, maps, UI or assets.
+The source screenshots in [`refs/source_examples/`](refs/source_examples/) anchor the dense GTA 2-like overhead city composition and the Crimsonland-like top-down survival combat. Use them to guide tone and readability; do not copy their artwork, maps, UI or assets.
 
 - [GTA2 — dense city street](refs/source_examples/01_gta2_city_street.png)
 - [GTA2 — city intersection/bridge](refs/source_examples/02_gta2_city_bridge.png)
@@ -86,8 +99,6 @@ The user-provided source screenshots are kept in [`refs/source_examples/`](refs/
 - [Crimsonland — projectile combat](refs/source_examples/07_crimsonland_projectile_attack.png)
 - [Crimsonland — snowfield swarm](refs/source_examples/08_crimsonland_snowfield_swarm.png)
 
-The earlier cleaner schematic district diagrams have been moved under [`refs/archive_previous/`](refs/archive_previous/); the boards above replace them as current visual direction.
+Earlier schematic diagrams are under [`refs/archive_previous/`](refs/archive_previous/). `refs/.gdignore` only tells Godot not to import this folder.
 
-`refs/.gdignore` only tells Godot not to import this folder into the game; the reference files themselves are untouched.
-
-> This is a fan-game prototype and art reference package, not a finished Android game or an endorsement by the rights holders. Confirm asset rights/licensing before any public or commercial release.
+> This is a fan game, not an endorsement by the rights holders. Confirm asset rights and licensing before any public or commercial release.

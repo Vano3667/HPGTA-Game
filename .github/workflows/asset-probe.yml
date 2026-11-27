@@ -1,0 +1,27 @@
+name: asset-probe
+
+# Measures the master images in assets/visual-kit so the sprite build can slice them correctly.
+on:
+  push:
+    branches: ["feature/**"]
+    paths:
+      - "tools/asset_probe.gd"
+      - ".github/workflows/asset-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe master images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Probe
+        shell: bash
+        run: godot --headless --path . -s res://tools/asset_probe.gd 2>&1 | tee probe.log | grep -E "\[probe\]|ERROR|Error"

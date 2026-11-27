@@ -2,6 +2,9 @@
 .godot/
 *.translation
 
+# Runtime art sliced from assets/visual-kit by tools/build_sprites.gd (rebuilt in CI)
+art/gen/
+
 # Builds
 build/
 android/

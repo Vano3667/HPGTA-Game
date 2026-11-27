@@ -8,12 +8,14 @@ The repository contains a **playable Godot 4.3 game** next to the design documen
 
 - Engine: Godot 4.3 (GDScript, GL Compatibility renderer), portrait, rendered at the device's native resolution.
 - One thumb only: touch the lower part of the screen and drag to move; every spell targets and fires by itself. Keyboard WASD/arrows work on desktop as a test aid.
-- Story mode with 15 stages: ten chapters and five story-boss arenas (Quirrell, the Basilisk, a Dementor, Nagini, Voldemort).
+- Story mode with 15 stages: ten chapters and five story-boss stages (Quirrell, the Basilisk, a Dementor, Nagini, Voldemort).
+- Open world: a stage has no border. The ground repeats without end and obstacles are generated around the hero as he walks.
 - Endless mode: chapters loop and get harder; the best result is saved.
 - Three heroes: Harry, Hermione and Ron, each with a different starting spell and stats.
-- 28 automatic spells, 6 passives, 9 fusions made of two to four spells, 3 evolutions and 12 elemental synergies. The Combos menu lists all of them and shows what the current build has.
+- 28 automatic spells and 6 talismans. A build holds up to 8 spells (to level 7) and 6 talismans (to level 5); after that every level offers repeatable bonus cards.
+- 9 fusions made of two to four spells, 3 evolutions and 12 elemental synergies. The Combos menu lists all of them and shows what the current build has.
 - Galleons are kept between runs and buy permanent upgrades and heroes.
-- Pseudo-3D arenas with weather, particles and glow; painted heroes, bosses, enemies and floors are sliced from [`assets/visual-kit/`](assets/visual-kit/) when the game is built. Anything without a usable painted sprite is drawn in code.
+- Weather, particles and glow. Painted heroes, bosses, enemies, floors and obstacles are sliced from [`assets/visual-kit/`](assets/visual-kit/) when the game is built. Anything without a usable painted sprite is drawn in code.
 - Procedural music and sound effects; no audio files.
 - Bestiary, how-to-play screen, first-run hints, pause, settings, local save with a per-stage checkpoint.
 
@@ -23,11 +25,13 @@ The repository contains a **playable Godot 4.3 game** next to the design documen
 2. Optional, for painted art: `godot --headless --path . -s res://tools/build_sprites.gd`
 3. Open `project.godot` in the editor and press **F5**, or run `godot --path .` from the repository root.
 
+The interface fonts (Yeseva One and Philosopher, SIL Open Font License) are downloaded by the CI workflow and are not stored in git. A local checkout falls back to the engine font unless you fetch them the same way (see `.github/workflows/build.yml`).
+
 ### Android APK
 
 The `build` GitHub Actions workflow (`.github/workflows/build.yml`) runs on pull requests and on pushes to `main` that touch code:
 
-1. builds the runtime art from `assets/visual-kit`, imports the project and runs the headless smoke test (`tests/smoke_test.gd`: a bot plays the story and endless mode, and every menu is opened in both languages);
+1. builds the runtime art from `assets/visual-kit`, downloads the fonts, imports the project and runs the headless smoke test (`tests/smoke_test.gd`: a bot plays the story and endless mode, walks across the open world, and every menu is opened in both languages);
 2. exports a debug APK and uploads it as the `hex-district-debug-apk` artifact of the run (Actions tab -> latest `build` run -> Artifacts).
 
 The APK is a debug build signed with the CI debug keystore. It is for testing only and is not the release signing identity for future app updates. Run the smoke test locally with:
@@ -45,13 +49,14 @@ For release signing, set up the persistent signing key as GitHub Actions secrets
 | Path | Role |
 |---|---|
 | `scripts/main.gd` | Entry point; wires world, HUD, joystick, audio and save |
-| `scripts/game/world.gd` | Simulation step, collisions, statuses and synergies, rendering layers |
+| `scripts/game/world.gd` | Simulation step, collisions, statuses and synergies, camera |
 | `scripts/game/arsenal.gd` | Automatic spells and fusions |
-| `scripts/game/director.gd` | Waves, elites, hazards, boss patterns, duels, endless mode |
-| `scripts/game/arena.gd`, `render.gd`, `art.gd` | Arena layouts, pseudo-3D helpers, code-drawn and painted actors |
-| `scripts/data/*.gd` | Stages, enemies and bosses, spells, fusions, heroes, upgrades |
+| `scripts/game/director.gd` | Waves, elites, hazards, boss patterns, endless mode |
+| `scripts/game/arena.gd` | Open-world generator: obstacles are built chunk by chunk around the hero |
+| `scripts/game/render.gd`, `art.gd` | Drawing passes, floor tiling, code-drawn and painted actors |
+| `scripts/data/*.gd` | Stages, enemies and bosses, spells, fusions, heroes, upgrades, build limits |
 | `scripts/core/*.gd` | Translations, sprite loader, save, procedural music and sound |
-| `scripts/ui/*.gd` | One-thumb joystick, HUD strip and menu panels |
+| `scripts/ui/*.gd` | One-thumb joystick, HUD strip, menu panels, fonts and styles |
 | `tools/build_sprites.gd` | Slices the master art into runtime sheets (`art/gen/`, not stored in git) |
 | `tests/smoke_test.gd` | Headless bot test used by CI |
 
@@ -62,6 +67,7 @@ See [HANDOFF.md](HANDOFF.md) for the verified status, known limits and next step
 - [CONCEPT.md](CONCEPT.md) — game concept, world, spells and survival loop.
 - [PROMPT_FOR_AGENT.md](PROMPT_FOR_AGENT.md) — autonomous implementation prompt for coding agents.
 - [HANDOFF.md](HANDOFF.md) — persistent status, verified work and next implementation action.
+- [ART_PROMPTS.md](ART_PROMPTS.md) — image prompts for floors, obstacles and characters, and the file names the game expects (in Russian).
 - [ANDROID_SIGNING.md](ANDROID_SIGNING.md) — Android release-signing key, GitHub Actions secrets and in-place update requirements.
 - [assets/visual-kit/VISUAL_BIBLE.md](assets/visual-kit/VISUAL_BIBLE.md) — the painted master art and how it is meant to be used.
 
